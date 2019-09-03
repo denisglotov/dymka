@@ -4,14 +4,13 @@ from pprint import pprint
 from web3 import Web3, HTTPProvider
 import argparse
 import json
+import logging
 import os
 import traceback
 
-from config.config import accounts, url_provider
-
 parser = argparse.ArgumentParser(description='Iteract with ethereum network.')
 parser.add_argument('command',
-                    help='show, balance, deploy, status, receipt, query, send, help')
+                    help='version, show, balance, deploy, status, receipt, query, send')
 parser.add_argument('arguments', nargs='*',
                     help='optional arguments to the command')
 parser.add_argument('-a', '--address',
@@ -22,23 +21,45 @@ parser.add_argument('-f', '--from', dest='from_account',
                     help='account name to transact from')
 parser.add_argument('-t', '--to',
                     help='account address to transact to')
-parser.add_argument('-v', '--verbose', action='count',
-                    help='verbose output')
 parser.add_argument('--chainId', type=int,
                     help='explicitly set chain id')
+parser.add_argument('--config', type=argparse.FileType('r'), default='./dymka.json',
+                    help='config to use, defaults to ./dymka.json')
 parser.add_argument('--gas', type=int,
                     help='explicitly set gas amount')
 parser.add_argument('--gasPrice', type=int,
                     help='explicitly set gas price')
 parser.add_argument('--nonce',
                     help='excplicitly set nonce')
-parser.add_argument('--raw', action='store_false',
-                    help='print the output data as raw')
 parser.add_argument('--timeout', type=int, default=120,
                     help='timeout to wait after the transaction, default is 120s')
 parser.add_argument('--value', type=int,
                     help='money amount to use in transaction')
+
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-v', '--verbose', action='count',
+                   help='verbose output')
+group.add_argument('-q', '--quiet', action='count',
+                   help='quiet output')
+
 args = parser.parse_args()
+
+
+def getLogger(defaultLevel):
+    log = logging.getLogger('dymka')
+    if args.verbose:
+        defaultLevel -= 10*args.verbose
+    if args.quiet:
+        defaultLevel += 10*args.quiet
+    log.setLevel(defaultLevel)
+    stream = logging.StreamHandler()
+    stream.setFormatter(logging.Formatter('%(levelname)s %(message)s'))
+    log.addHandler(stream)
+    return log
+
+
+log = getLogger(logging.WARN)
+config = json.load(args.config)
 
 
 def getJson(fname):
@@ -48,9 +69,11 @@ def getJson(fname):
 
 def getOptionalArguments(ord):
     if len(args.arguments) > ord:
-        arguments = eval(args.arguments[ord])
-        print(arguments)
-        return arguments
+        log.debug('Raw args %s', args.arguments[ord:])
+        arguments = eval(str(args.arguments[ord:]))
+        log.debug('Arguments: %s', arguments)
+        return [arguments]
+    return [[]]
 
 
 def getContractData(name):
@@ -68,13 +91,13 @@ def getContractData(name):
 
 def getAddress(w3, account_name):
     if account_name:
-        return w3.eth.account.from_key(accounts[account_name]).address
+        return w3.eth.account.from_key(config['accounts'][account_name]).address
 
 
 def transact(w3, tx, private_key):
     signed = w3.eth.account.sign_transaction(tx, private_key=private_key)
     hash = w3.eth.sendRawTransaction(signed.rawTransaction)
-    pprint(hash.hex())
+    log.info('Transaction hash: %s', hash.hex())
     try:
         w3.eth.waitForTransactionReceipt(hash, timeout=args.timeout)
     except Exception:
@@ -99,12 +122,16 @@ def processAccounts(fn, name, *vargs):
 
 
 def main():
-    provider = HTTPProvider(url_provider)
+    if args.command == 'version':
+        print('Version: 0.1')
+        return
+
+    provider = HTTPProvider(config['provider']['url'])
     w3 = Web3(provider)
     address_from = getAddress(w3, args.from_account)
 
     if args.command == 'show':
-        status = {'provider': url_provider}
+        status = {'provider': config['provider']}
         if address_from:
             status['name'] = args.from_account
             status['address'] = address_from
@@ -171,7 +198,7 @@ def main():
         contract = w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
         tx = contract.constructor(*arguments).buildTransaction(opts)
-        hash = transact(w3, tx, accounts[args.from_account])
+        hash = transact(w3, tx, config['accounts'][args.from_account])
         status = {
             'hash': hash.hex(),
             'address': w3.eth.getTransactionReceipt(hash)['contractAddress'],
@@ -181,7 +208,7 @@ def main():
 
     if args.command == 'send' or args.command == 'invoke':
         tx = opts if not args.contract else buildContractSendTx(w3, opts)
-        result = transact(w3, tx, accounts[args.from_account])
+        result = transact(w3, tx, config['accounts'][args.from_account])
         status = {
             'receipt': dict(w3.eth.getTransactionReceipt(result)),
         }
@@ -193,7 +220,7 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        if args.verbose and args.verbose >= 2:
+        if log.isEnabledFor(logging.DEBUG):
             traceback.print_exc()
         else:
-            print('Error:', e)
+            log.error(e)
