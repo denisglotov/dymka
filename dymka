@@ -126,7 +126,7 @@ def main():
         print('Version: 0.1')
         return
 
-    provider = HTTPProvider(config['provider']['url'])
+    provider = HTTPProvider(config['provider'])
     w3 = Web3(provider)
     address_from = getAddress(w3, args.from_account)
 

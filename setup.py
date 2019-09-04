@@ -1,0 +1,29 @@
+import setuptools
+
+with open('readme.md', 'r') as fh:
+    long_description = fh.read()
+
+    setuptools.setup(
+        name='dymka',
+        version='0.0.1',
+        author='Denis Glotov',
+        author_email='denis@glotov.org',
+        description='Swiss knife cli for Ethereum-based blockchains',
+        long_description=long_description,
+        long_description_content_type='text/markdown',
+        url='https://github.com/denisglotov/dymka.git',
+        packages=setuptools.find_packages(),
+        install_requires=[
+            'web3',
+        ],
+        scripts=['dymka'],
+        classifiers=[
+            'Intended Audience :: Developers',
+            'License :: OSI Approved :: MIT License',
+            'Operating System :: OS Independent',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.6',
+            'Programming Language :: Python :: 3.7',
+        ],
+        python_requires='>=3.6',
+    )
