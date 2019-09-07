@@ -37,3 +37,12 @@ Balance of accounts
 
     $ dymka balance 0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875
     [{'account': '0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875', 'balance': 0}]
+
+
+Send money
+----------
+
+    $ dymka send --to 0x97E6aF105A1061975fdA6C6D0e7544b7C3600EBC --value 1000000000000000000 --gasPrice 1000000000 -e
+
+Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you
+can specify `--gas 21000`.

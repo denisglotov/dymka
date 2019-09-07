@@ -8,7 +8,8 @@ import logging
 import os
 import traceback
 
-parser = argparse.ArgumentParser(description='Iteract with ethereum network.')
+parser = argparse.ArgumentParser(description='Iteract with ethereum network.',
+                                 fromfile_prefix_chars='@')
 parser.add_argument('command',
                     help='version, show, balance, deploy, status, receipt, query, send')
 parser.add_argument('arguments', nargs='*',
@@ -17,16 +18,20 @@ parser.add_argument('-a', '--address',
                     help='contract address to send/call')
 parser.add_argument('-c', '--contract',
                     help='contract name or its json path')
+parser.add_argument('-d', '--dry', action='store_true',
+                    help='dry run, do not transact')
 parser.add_argument('-f', '--from', dest='from_account',
-                    help='account name to transact from')
+                    default=os.environ.get('WEB3_FROM', None),
+                    help='account name to transact from, defaults to env WEB3_FROM')
+parser.add_argument('-p', '--provider',
+                    default=os.environ.get('WEB3_PROVIDER', 'http://localhost:8545'),
+                    help='web3 proveder, defaults to env WEB3_PROVIDER or localhost:8545')
 parser.add_argument('-t', '--to',
                     help='account address to transact to')
 parser.add_argument('--chainId', type=int,
                     help='explicitly set chain id')
-parser.add_argument('--config', type=argparse.FileType('r'), default='./dymka.json',
-                    help='config to use, defaults to ./dymka.json')
-parser.add_argument('--gas', type=int,
-                    help='explicitly set gas amount')
+parser.add_argument('--password', type=argparse.FileType('r'),
+                    help='pass phrase to unlock the from account, defaults to empty')
 parser.add_argument('--gasPrice', type=int,
                     help='explicitly set gas price')
 parser.add_argument('--nonce',
@@ -41,6 +46,12 @@ group.add_argument('-v', '--verbose', action='count',
                    help='verbose output')
 group.add_argument('-q', '--quiet', action='count',
                    help='quiet output')
+
+group = parser.add_mutually_exclusive_group()
+group.add_argument('-e', '--estimate', '--estimateGas', action='store_true',
+                    help='estimate gas for the tx and use it unless dry run')
+group.add_argument('--gas', type=int,
+                    help='explicitly set gas amount')
 
 args = parser.parse_args()
 
@@ -58,8 +69,7 @@ def getLogger(defaultLevel):
     return log
 
 
-log = getLogger(logging.WARN)
-config = json.load(args.config)
+log = getLogger(logging.INFO)
 
 
 def getJson(fname):
@@ -89,12 +99,28 @@ def getContractData(name):
     return contract['abi'], contract['bin']
 
 
+def getAccount(w3, account_name):
+    if os.path.isfile(args.from_account):
+        password = args.password.read() if args.password else ''
+        with open(args.from_account) as keyfile:
+            encrypted_key = keyfile.read()
+            return w3.eth.account.decrypt(encrypted_key, password)
+    return args.from_account
+
+
 def getAddress(w3, account_name):
     if account_name:
-        return w3.eth.account.from_key(config['accounts'][account_name]).address
+        return w3.eth.account.from_key(getAccount(w3, account_name)).address
 
 
 def transact(w3, tx, private_key):
+    if args.estimate:
+        gas = w3.eth.estimateGas(tx)
+        log.info('Gas estimated %s', gas)
+        tx['gas'] = gas
+    if args.dry:
+        log.info('Dry run requested, nothing more to do')
+        return {}
     signed = w3.eth.account.sign_transaction(tx, private_key=private_key)
     hash = w3.eth.sendRawTransaction(signed.rawTransaction)
     log.info('Transaction hash: %s', hash.hex())
@@ -103,7 +129,11 @@ def transact(w3, tx, private_key):
     except Exception:
         raise ValueError('Timeout waiting ' + str(args.timeout) + 's for transaction ' +
                          hash.hex())
-    return hash
+    status = {
+        'hash': hash.hex(),
+        'receipt': dict(w3.eth.getTransactionReceipt(hash)),
+    }
+    return status
 
 
 def buildContractSendTx(w3, opts):
@@ -126,12 +156,13 @@ def main():
         print('Version: 0.1')
         return
 
-    provider = HTTPProvider(config['provider'])
+    log.info('Using %s to connect web3...', args.provider)
+    provider = HTTPProvider(args.provider)
     w3 = Web3(provider)
     address_from = getAddress(w3, args.from_account)
 
     if args.command == 'show':
-        status = {'provider': config['provider']}
+        status = {'provider': args.provider}
         if address_from:
             status['name'] = args.from_account
             status['address'] = address_from
@@ -190,28 +221,20 @@ def main():
     for name in ['chainId', 'gas', 'gasPrice', 'value', 'to']:
         if vars(args)[name]:
             opts[name] = vars(args)[name]
-    if args.verbose:
-        print('Transaction options:', opts)
+    log.info('Transaction options: %s', opts)
 
     if args.command == 'deploy':
         abi, bin = getContractData(args.contract)
         contract = w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
         tx = contract.constructor(*arguments).buildTransaction(opts)
-        hash = transact(w3, tx, config['accounts'][args.from_account])
-        status = {
-            'hash': hash.hex(),
-            'address': w3.eth.getTransactionReceipt(hash)['contractAddress'],
-        }
+        status = transact(w3, tx, getAccount(w3, args.from_account))
         pprint(status)
         return
 
     if args.command == 'send' or args.command == 'invoke':
         tx = opts if not args.contract else buildContractSendTx(w3, opts)
-        result = transact(w3, tx, config['accounts'][args.from_account])
-        status = {
-            'receipt': dict(w3.eth.getTransactionReceipt(result)),
-        }
+        status = transact(w3, tx, getAccount(w3, args.from_account))
         pprint(status)
         return
 
