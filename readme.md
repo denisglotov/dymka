@@ -46,3 +46,38 @@ Send money
 
 Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you
 can specify `--gas 21000`.
+
+
+Compile contract
+----------------
+
+There is [demo](demo.sol) contract, compile it lile the following so we get `demo.json`.
+
+    solc --combined-json abi,bin --optimize demo.sol >demo.json
+
+
+Deploy contract
+---------------
+
+    $ dymka deploy -c demo
+    {'hash': '0xe4a8eeb6dc8a21e430077d460d2618c6a0a380e71dfecadcf4ceb252bae729b3',
+     'receipt': {...
+                 'contractAddress': '0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A',
+                 ...}
+
+
+Call contract
+-------------
+
+    $ dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A call value
+    {'result': 42}
+
+    $ dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A call compare 45
+    {'result': [True, False]}
+
+
+Invoke contract
+---------------
+
+    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A invoke set 42 100
+    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A invoke act

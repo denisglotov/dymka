@@ -80,10 +80,9 @@ def getJson(fname):
 def getOptionalArguments(ord):
     if len(args.arguments) > ord:
         log.debug('Raw args %s', args.arguments[ord:])
-        arguments = eval(str(args.arguments[ord:]))
+        arguments = eval('[' + ','.join(args.arguments[ord:]) + ']')
         log.debug('Arguments: %s', arguments)
-        return [arguments]
-    return [[]]
+        return arguments
 
 
 def getContractData(name):
@@ -92,9 +91,9 @@ def getContractData(name):
         fname = name
     data = getJson(fname)
     contracts_section = data['contracts']
-    contracts = [key for key in contracts_section.keys() if key.endswith(name)]
+    contracts = [key for key in contracts_section.keys() if key.lower().endswith(name.lower())]
     if len(contracts) != 1:
-        raise ValueError('Ambigous contract list ' + contracts + ' in json ' + fname)
+        raise ValueError(f'Ambigous contract list {contracts} in json {fname} for contract {name}.')
     contract = contracts_section[contracts[0]]
     return contract['abi'], contract['bin']
 
@@ -114,25 +113,24 @@ def getAddress(w3, account_name):
 
 
 def transact(w3, tx, private_key):
+    status = {}
     if args.estimate:
         gas = w3.eth.estimateGas(tx)
         log.info('Gas estimated %s', gas)
-        tx['gas'] = gas
+        tx['gas'] = status['gas'] = gas
     if args.dry:
         log.info('Dry run requested, nothing more to do')
-        return {}
+        return status
     signed = w3.eth.account.sign_transaction(tx, private_key=private_key)
     hash = w3.eth.sendRawTransaction(signed.rawTransaction)
+    status['hash'] = hash.hex()
     log.info('Transaction hash: %s', hash.hex())
     try:
         w3.eth.waitForTransactionReceipt(hash, timeout=args.timeout)
     except Exception:
         raise ValueError('Timeout waiting ' + str(args.timeout) + 's for transaction ' +
                          hash.hex())
-    status = {
-        'hash': hash.hex(),
-        'receipt': dict(w3.eth.getTransactionReceipt(hash)),
-    }
+    status['receipt'] = dict(w3.eth.getTransactionReceipt(hash))
     return status
 
 
@@ -187,7 +185,8 @@ def main():
 
     if args.command == 'exec':
         function = args.arguments[0]
-        res = provider.make_request(function, *getOptionalArguments(1))
+        arguments = getOptionalArguments(1)
+        res = provider.make_request(function, *arguments if arguments else [[]])
         pprint(res)
         return
 
@@ -227,7 +226,8 @@ def main():
         abi, bin = getContractData(args.contract)
         contract = w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
-        tx = contract.constructor(*arguments).buildTransaction(opts)
+        ctor = contract.constructor(*arguments) if arguments else contract.constructor()
+        tx = ctor.buildTransaction(opts)
         status = transact(w3, tx, getAccount(w3, args.from_account))
         pprint(status)
         return
