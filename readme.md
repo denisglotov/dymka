@@ -69,22 +69,33 @@ Deploy contract
                  'contractAddress': '0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A',
                  ...}
 
+If you need to send money to the contract being deployed, use `--value`.
+
+For convenience, export the address as environment variable as following.
+
+    export WEB3_CONTRACT_DEMO=0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A
+
+Alternatively, you may specify the address every time you want to call/send to
+the contract with `-a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A`.
+
 
 Call contract
 -------------
 
-    $ dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A call value
+    $ dymka -c demo call value
     {'result': 42}
 
-    $ dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A call compare 45
+    $ dymka -c demo call compare 45
     {'result': [True, False]}
 
 
 Invoke contract
 ---------------
 
-    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A send set 42 100
-    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A send act
+    dymka -c demo send set 42 100
+    dymka -c demo send act
+
+If you need to send money to the contract, use `--value`.
 
 
 Gas price

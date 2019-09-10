@@ -15,7 +15,8 @@ parser.add_argument('command',
 parser.add_argument('arguments', nargs='*',
                     help='optional arguments to the command')
 parser.add_argument('-a', '--address',
-                    help='contract address to send/call')
+                    help='contract address to send/call, defaults to env '
+                    'WEB3_CONTRACT_{CONTRACT_NAME}')
 parser.add_argument('-c', '--contract',
                     help='contract name or its json path')
 parser.add_argument('-d', '--dry', action='store_true',
@@ -93,21 +94,6 @@ def getOptionalArguments(ord):
         return arguments
 
 
-def getContractData(name):
-    fname = name + '.json'
-    if not os.path.isfile(fname):
-        fname = name
-    data = getJson(fname)
-    contracts_section = data['contracts']
-    contracts = [key for key in contracts_section.keys()
-                 if key.lower().endswith(name.lower())]
-    if len(contracts) != 1:
-        raise ValueError(f'Ambigous or empty contract list {contracts} in json {fname} '
-                         f'for contract {name}.')
-    contract = contracts_section[contracts[0]]
-    return contract['abi'], contract['bin']
-
-
 class Dymka:
     def __init__(self):
         log.info('Using %s to connect web3...', args.provider)
@@ -173,11 +159,42 @@ class Dymka:
         receipt = self.w3.eth.getTransactionReceipt(hash)
         return dict(receipt)
 
+    @staticmethod
+    def getContractAddressEnv(name):
+        return f'WEB3_CONTRACT_{name.upper()}'
+
+    @classmethod
+    def getContractAddress(cls, name):
+        if args.address:
+            return args.address
+        envname = cls.getContractAddressEnv(name)
+        address = os.environ.get(envname, None)
+        if address:
+            log.info(f'Using contract {name} at {address}')
+            return address
+        raise ValueError(f'Need contract address, but neither --address nor {envname} set.')
+
+    @staticmethod
+    def getContractData(name):
+        fname = name + '.json'
+        if not os.path.isfile(fname):
+            fname = name
+        data = getJson(fname)
+        contracts_section = data['contracts']
+        contracts = [key for key in contracts_section.keys()
+                     if key.lower().endswith(name.lower())]
+        if len(contracts) != 1:
+            raise ValueError(f'Ambigous or empty contract list {contracts} in json {fname} '
+                             f'for contract {name}.')
+        contract = contracts_section[contracts[0]]
+        return contract['abi'], contract['bin']
+
     @command
     def call(self):
         function_name = args.arguments[0]
-        abi, _ = getContractData(args.contract)
-        contract = self.w3.eth.contract(abi=abi, address=args.address)
+        abi, _ = self.getContractData(args.contract)
+        contract = self.w3.eth.contract(abi=abi,
+                                        address=self.getContractAddress(args.contract))
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
         tx = func(*arguments) if arguments else func()
@@ -216,17 +233,24 @@ class Dymka:
 
     @command
     def deploy(self):
-        abi, bin = getContractData(args.contract)
+        abi, bin = self.getContractData(args.contract)
         contract = self.w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
         ctor = contract.constructor(*arguments) if arguments else contract.constructor()
         tx = ctor.buildTransaction(self.getOpts())
-        return self.transact(tx)
+        status = self.transact(tx)
+        if 'receipt' in status:
+            address = status['receipt']['contractAddress']
+            log.info(f'Evaluate: '
+                     f'export {self.getContractAddressEnv(args.contract)}={address}')
+        return status
+
 
     def buildContractSendTx(self, opts):
         function_name = args.arguments[0]
-        abi, _ = getContractData(args.contract)
-        contract = self.w3.eth.contract(abi=abi, address=args.address)
+        abi, _ = self.getContractData(args.contract)
+        contract = self.w3.eth.contract(abi=abi,
+                                        address=self.getContractAddress(args.contract))
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
         func_bound = func(*arguments) if arguments else func()
@@ -241,8 +265,8 @@ class Dymka:
 
 if __name__ == "__main__":
     if args.command == 'version':
-        print('Version: 0.1')
-
+        print('Version: 0.0.2')
+        exit(0)
     try:
         d = Dymka()
         pprint(dispatch[args.command](d))
