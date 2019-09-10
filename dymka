@@ -11,7 +11,7 @@ import traceback
 parser = argparse.ArgumentParser(description='Iteract with ethereum network.',
                                  fromfile_prefix_chars='@')
 parser.add_argument('command',
-                    help='version, show, balance, deploy, status, receipt, query, send')
+                    help='command to do, see list below')
 parser.add_argument('arguments', nargs='*',
                     help='optional arguments to the command')
 parser.add_argument('-a', '--address',
@@ -72,6 +72,14 @@ def getLogger(defaultLevel):
 log = getLogger(logging.INFO)
 
 
+def command(func):
+    dispatch[func.__name__] = func
+    return func
+
+
+dispatch = {}
+
+
 def getJson(fname):
     with open(fname) as file:
         return json.load(file)
@@ -91,157 +99,153 @@ def getContractData(name):
         fname = name
     data = getJson(fname)
     contracts_section = data['contracts']
-    contracts = [key for key in contracts_section.keys() if key.lower().endswith(name.lower())]
+    contracts = [key for key in contracts_section.keys()
+                 if key.lower().endswith(name.lower())]
     if len(contracts) != 1:
-        raise ValueError(f'Ambigous contract list {contracts} in json {fname} for contract {name}.')
+        raise ValueError(f'Ambigous or empty contract list {contracts} in json {fname} '
+                         f'for contract {name}.')
     contract = contracts_section[contracts[0]]
     return contract['abi'], contract['bin']
 
 
-def getAccount(w3, account_name):
-    if os.path.isfile(args.from_account):
-        password = args.password.read() if args.password else ''
-        with open(args.from_account) as keyfile:
-            encrypted_key = keyfile.read()
-            return w3.eth.account.decrypt(encrypted_key, password)
-    return args.from_account
+class Dymka:
+    def __init__(self):
+        log.info('Using %s to connect web3...', args.provider)
+        self.provider = HTTPProvider(args.provider)
+        self.w3 = Web3(self.provider)
+        self.privKey = None
+        self.address_from = None
+        if args.from_account:
+            if os.path.isfile(args.from_account):
+                password = args.password.read() if args.password else ''
+                with open(args.from_account) as keyfile:
+                    encrypted_key = keyfile.read()
+                    self.privKey = self.w3.eth.account.decrypt(encrypted_key, password)
+            else:
+                self.privKey = args.from_account
+        if self.privKey:
+            self.address_from = self.w3.eth.account.from_key(self.privKey).address
 
-
-def getAddress(w3, account_name):
-    if account_name:
-        return w3.eth.account.from_key(getAccount(w3, account_name)).address
-
-
-def transact(w3, tx, private_key):
-    status = {}
-    if args.estimate:
-        gas = w3.eth.estimateGas(tx)
-        log.info('Gas estimated %s', gas)
-        tx['gas'] = status['gas'] = gas
-    if args.dry:
-        log.info('Dry run requested, nothing more to do')
-        return status
-    signed = w3.eth.account.sign_transaction(tx, private_key=private_key)
-    hash = w3.eth.sendRawTransaction(signed.rawTransaction)
-    status['hash'] = hash.hex()
-    log.info('Transaction hash: %s', hash.hex())
-    try:
-        w3.eth.waitForTransactionReceipt(hash, timeout=args.timeout)
-    except Exception:
-        raise ValueError('Timeout waiting ' + str(args.timeout) + 's for transaction ' +
-                         hash.hex())
-    status['receipt'] = dict(w3.eth.getTransactionReceipt(hash))
-    return status
-
-
-def buildContractSendTx(w3, opts):
-    function_name = args.arguments[0]
-    abi, _ = getContractData(args.contract)
-    contract = w3.eth.contract(abi=abi, address=args.address)
-    arguments = getOptionalArguments(1)
-    func = contract.functions[function_name]
-    func_bound = func(*arguments) if arguments else func()
-    return func_bound.buildTransaction(opts)
-
-
-def processAccounts(fn, name, *vargs):
-    pprint(list(map(lambda a: a and {'account': a, name: fn(a)},
-                    [*args.arguments, *filter(None, vargs)])))
-
-
-def main():
-    if args.command == 'version':
-        print('Version: 0.1')
-        return
-
-    log.info('Using %s to connect web3...', args.provider)
-    provider = HTTPProvider(args.provider)
-    w3 = Web3(provider)
-    address_from = getAddress(w3, args.from_account)
-
-    if args.command == 'show':
+    @command
+    def show(self):
         status = {'provider': args.provider}
-        if address_from:
-            status['name'] = args.from_account
-            status['address'] = address_from
-        pprint(status)
-        return
+        if self.address_from:
+            status['address'] = self.address_from
+        return status
 
-    if args.command == 'gas':
-        pprint(w3.eth.gasPrice)
-        return
+    @command
+    def gas(self):
+        return {'gasPrice': self.w3.eth.gasPrice}
 
-    if args.command == 'checksum':
-        processAccounts(Web3.toChecksumAddress, 'checksummed', address_from, args.to)
-        return
+    @staticmethod
+    def processAccounts(fn, *vargs):
+        return list(map(lambda a: a and {'account': a, 'result': fn(a)},
+                        [*args.arguments, *filter(None, vargs)]))
 
-    if args.command == 'balance':
-        processAccounts(w3.eth.getBalance, 'balance', address_from, args.to)
-        return
+    @command
+    def checksum(self):
+        return self.processAccounts(Web3.toChecksumAddress, self.address_from, args.to)
 
-    if args.command == 'nonce':
-        processAccounts(w3.eth.getTransactionCount, 'nonce', address_from, args.to)
-        return
+    @command
+    def balance(self):
+        return self.processAccounts(self.w3.eth.getBalance, self.address_from, args.to)
 
-    if args.command == 'exec':
+    @command
+    def nonce(self):
+        return self.processAccounts(self.w3.eth.getTransactionCount,
+                                    self.address_from, args.to)
+
+    @command
+    def exec(self):
         function = args.arguments[0]
         arguments = getOptionalArguments(1)
-        res = provider.make_request(function, *arguments if arguments else [[]])
-        pprint(res)
-        return
+        return self.provider.make_request(function, *arguments if arguments else [[]])
 
-    if args.command == 'status':
+    @command
+    def transaction(self):
         hash = args.arguments[0]
-        tx = w3.eth.getTransaction(hash)
-        pprint(dict(tx))
-        return
+        tx = self.w3.eth.getTransaction(hash)
+        return dict(tx)
 
-    if args.command == 'receipt':
+    @command
+    def receipt(self):
         hash = args.arguments[0]
-        receipt = w3.eth.getTransactionReceipt(hash)
-        pprint(dict(receipt))
-        return
+        receipt = self.w3.eth.getTransactionReceipt(hash)
+        return dict(receipt)
 
-    if args.command == 'call' or args.command == 'query':
+    @command
+    def call(self):
         function_name = args.arguments[0]
         abi, _ = getContractData(args.contract)
-        contract = w3.eth.contract(abi=abi, address=args.address)
+        contract = self.w3.eth.contract(abi=abi, address=args.address)
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
         tx = func(*arguments) if arguments else func()
-        status = {'result': tx.call({'from': address_from})}
-        pprint(status)
-        return
+        return {'result': tx.call({'from': self.address_from})}
 
-    opts = {
-        'from': address_from,
-        'nonce': args.nonce or w3.eth.getTransactionCount(address_from)
-    }
-    for name in ['chainId', 'gas', 'gasPrice', 'value', 'to']:
-        if vars(args)[name]:
-            opts[name] = vars(args)[name]
-    log.info('Transaction options: %s', opts)
+    def getOpts(self):
+        opts = {
+            'from': self.address_from,
+            'nonce': args.nonce or self.w3.eth.getTransactionCount(self.address_from)
+        }
+        for name in ['chainId', 'gas', 'gasPrice', 'value', 'to']:
+            if vars(args)[name]:
+                opts[name] = vars(args)[name]
+        log.info('Transaction options: %s', opts)
+        return opts
 
-    if args.command == 'deploy':
+    def transact(self, tx):
+        status = {}
+        if args.estimate:
+            gas = self.w3.eth.estimateGas(tx)
+            log.info('Gas estimated %s', gas)
+            tx['gas'] = status['gas'] = gas
+        if args.dry:
+            log.info('Dry run requested, nothing more to do')
+            return status
+        signed = self.w3.eth.account.sign_transaction(tx, private_key=self.privKey)
+        hash = self.w3.eth.sendRawTransaction(signed.rawTransaction)
+        status['hash'] = hash.hex()
+        log.info('Transaction hash: %s', hash.hex())
+        try:
+            self.w3.eth.waitForTransactionReceipt(hash, timeout=args.timeout)
+        except Exception:
+            raise ValueError(f'Timeout waiting {args.timeout}s for transaction {hash.hex()}')
+        status['receipt'] = dict(self.w3.eth.getTransactionReceipt(hash))
+        return status
+
+    @command
+    def deploy(self):
         abi, bin = getContractData(args.contract)
-        contract = w3.eth.contract(abi=abi, bytecode=bin)
+        contract = self.w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
         ctor = contract.constructor(*arguments) if arguments else contract.constructor()
-        tx = ctor.buildTransaction(opts)
-        status = transact(w3, tx, getAccount(w3, args.from_account))
-        pprint(status)
-        return
+        tx = ctor.buildTransaction(self.getOpts())
+        return self.transact(tx)
 
-    if args.command == 'send' or args.command == 'invoke':
-        tx = opts if not args.contract else buildContractSendTx(w3, opts)
-        status = transact(w3, tx, getAccount(w3, args.from_account))
-        pprint(status)
-        return
+    def buildContractSendTx(self, opts):
+        function_name = args.arguments[0]
+        abi, _ = getContractData(args.contract)
+        contract = self.w3.eth.contract(abi=abi, address=args.address)
+        arguments = getOptionalArguments(1)
+        func = contract.functions[function_name]
+        func_bound = func(*arguments) if arguments else func()
+        return func_bound.buildTransaction(opts)
+
+    @command
+    def send(self):
+        opts = self.getOpts()
+        tx = opts if not args.contract else self.buildContractSendTx(opts)
+        return self.transact(tx)
 
 
 if __name__ == "__main__":
+    if args.command == 'version':
+        print('Version: 0.1')
+
     try:
-        main()
+        d = Dymka()
+        pprint(dispatch[args.command](d))
     except Exception as e:
         if log.isEnabledFor(logging.DEBUG):
             traceback.print_exc()

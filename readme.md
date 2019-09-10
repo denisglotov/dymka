@@ -32,17 +32,20 @@ See https://github.com/ethereum/wiki/wiki/JSON-RPC and
 https://github.com/ethereum/go-ethereum/wiki/Management-APIs for more.
 
 
-Balance of accounts
--------------------
+Balance and nonce of accounts
+-----------------------------
 
     $ dymka balance 0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875
-    [{'account': '0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875', 'balance': 0}]
+    [{'account': '0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875', 'result': 0}]
+
+    $ dymka nonce 0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875
+    [{'account': '0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875', 'result': 0}]
 
 
 Send money
 ----------
 
-    $ dymka send --to 0x97E6aF105A1061975fdA6C6D0e7544b7C3600EBC --value 1000000000000000000 --gasPrice 1000000000 -e
+    dymka send --to 0x97E6aF105A1061975fdA6C6D0e7544b7C3600EBC --value 1000000000000000000 --gasPrice 1000000000 -e
 
 Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you
 can specify `--gas 21000`.
@@ -51,7 +54,8 @@ can specify `--gas 21000`.
 Compile contract
 ----------------
 
-There is [demo](demo.sol) contract, compile it lile the following so we get `demo.json`.
+There is [demo](demo.sol) contract, compile it like the following so we get
+`demo.json`.
 
     solc --combined-json abi,bin --optimize demo.sol >demo.json
 
@@ -79,5 +83,24 @@ Call contract
 Invoke contract
 ---------------
 
-    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A invoke set 42 100
-    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A invoke act
+    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A send set 42 100
+    dymka -c demo -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A send act
+
+
+Gas price
+---------
+
+Displays gas price of the current provider
+([web3.eth.gasPrice](https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#getgasprice)).
+
+    $ dymka gas
+    {'gasPrice': 1000000000}
+
+
+Other commands
+--------------
+
+* `checksum` - calculate correct checksummed string for the given address,
+* `show` - display used provider and from address,
+* `transaction` - show transaction details for the given hash,
+* `receipt` - show receipt for the given hash.
