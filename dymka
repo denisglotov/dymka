@@ -8,10 +8,10 @@ import logging
 import os
 import traceback
 
-parser = argparse.ArgumentParser(description='Iteract with ethereum network.',
+parser = argparse.ArgumentParser(description='Interact with ethereum network.',
                                  fromfile_prefix_chars='@')
 parser.add_argument('command',
-                    help='command to do, see list below')
+                    help='version exec balance nonce deploy call send receipt ...'),
 parser.add_argument('arguments', nargs='*',
                     help='optional arguments to the command')
 parser.add_argument('-a', '--address',
@@ -265,7 +265,7 @@ class Dymka:
 
 if __name__ == "__main__":
     if args.command == 'version':
-        print('Version: 0.0.2')
+        print('Version: 1.0.0')
         exit(0)
     try:
         d = Dymka()

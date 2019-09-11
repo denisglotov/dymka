@@ -1,6 +1,8 @@
 Dymka
 =====
 
+![Dymka the cat](https://denisglotov.github.io/dymka/dymka.jpg)
+
 Minimalist command line tool for interacting with Ethereum-based blockchains.
 
 Install the tool:

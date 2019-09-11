@@ -5,7 +5,7 @@ with open('readme.md', 'r') as fh:
 
     setuptools.setup(
         name='dymka',
-        version='0.0.2',
+        version='1.0.0',
         author='Denis Glotov',
         author_email='denis@glotov.org',
         description='Swiss knife cli for Ethereum-based blockchains',
