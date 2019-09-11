@@ -1,7 +1,7 @@
 Dymka
 =====
 
-![Dymka the cat](https://denisglotov.github.io/dymka/dymka.jpg)
+<img align="right" width="100%" height="100%" src="https://denisglotov.github.io/dymka/dymka.jpg">
 
 Minimalist command line tool for interacting with Ethereum-based blockchains.
 
