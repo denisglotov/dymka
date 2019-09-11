@@ -23,7 +23,8 @@ parser.add_argument('-d', '--dry', action='store_true',
                     help='dry run, do not transact')
 parser.add_argument('-f', '--from', dest='from_account',
                     default=os.environ.get('WEB3_FROM', None),
-                    help='account name to transact from, defaults to env WEB3_FROM')
+                    help='account keystore filename, raw private key or account address, '
+                    'defaults to env WEB3_FROM')
 parser.add_argument('-p', '--provider',
                     default=os.environ.get('WEB3_PROVIDER', 'http://localhost:8545'),
                     help='web3 proveder, defaults to env WEB3_PROVIDER or localhost:8545')
@@ -107,6 +108,8 @@ class Dymka:
                 with open(args.from_account) as keyfile:
                     encrypted_key = keyfile.read()
                     self.privKey = self.w3.eth.account.decrypt(encrypted_key, password)
+            elif args.from_account.startswith('0x'):
+                self.address_from = args.from_account
             else:
                 self.privKey = args.from_account
         if self.privKey:

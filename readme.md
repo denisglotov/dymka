@@ -117,7 +117,7 @@ Call contract
     $ dymka @myaccount -c demo call value
     {'result': 42}
 
-    $ dymka @myaccount -c demo call compare 45
+    $ dymka --from 0xCF3f5c33d396c958a06d17A5B9cCB80452DC2aBe -c demo call compare 45
     {'result': [True, False]}
 
 
