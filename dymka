@@ -25,6 +25,8 @@ parser.add_argument('-f', '--from', dest='from_account',
                     default=os.environ.get('WEB3_FROM', None),
                     help='account keystore filename, raw private key or account address, '
                     'defaults to env WEB3_FROM')
+parser.add_argument('-j', '--contractJson',
+                    help='contract json path if different from contract name')
 parser.add_argument('-p', '--provider',
                     default=os.environ.get('WEB3_PROVIDER', 'http://localhost:8545'),
                     help='web3 proveder, defaults to env WEB3_PROVIDER or localhost:8545')
@@ -167,41 +169,47 @@ class Dymka:
         return f'WEB3_CONTRACT_{name.upper()}'
 
     @classmethod
-    def getContractAddress(cls, name):
+    def getContractAddress(cls):
         if args.address:
             return args.address
-        envname = cls.getContractAddressEnv(name)
+        envname = cls.getContractAddressEnv(args.contract)
         address = os.environ.get(envname, None)
         if address:
-            log.info(f'Using contract {name} at {address}')
+            log.info(f'Using contract {args.contract} at {address}')
             return address
         raise ValueError(f'Need contract address, but neither --address nor {envname} set.')
 
     @staticmethod
-    def getContractData(name):
-        fname = name + '.json'
-        if not os.path.isfile(fname):
-            fname = name
+    def getContractData():
+        fname = args.contractJson
+        if not fname:
+            fname = args.contract + '.json'
+            if not os.path.isfile(fname):
+                fname = args.contract
         data = getJson(fname)
         contracts_section = data['contracts']
         contracts = [key for key in contracts_section.keys()
-                     if key.lower().endswith(name.lower())]
+                     if key.lower().endswith(args.contract.lower())]
         if len(contracts) != 1:
             raise ValueError(f'Ambigous or empty contract list {contracts} in json {fname} '
-                             f'for contract {name}.')
+                             f'for contract {args.contract}.')
         contract = contracts_section[contracts[0]]
         return contract['abi'], contract['bin']
 
     @command
     def call(self):
         function_name = args.arguments[0]
-        abi, _ = self.getContractData(args.contract)
+        abi, _ = self.getContractData()
         contract = self.w3.eth.contract(abi=abi,
-                                        address=self.getContractAddress(args.contract))
+                                        address=self.getContractAddress())
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
         tx = func(*arguments) if arguments else func()
-        return {'result': tx.call({'from': self.address_from})}
+        from_account = self.address_from
+        if not from_account:
+            from_account = '0x0000000000000000000000000000000000000000'
+            log.warn(f'From account not specified, using {from_account}.')
+        return {'result': tx.call({'from': from_account})}
 
     def getOpts(self):
         opts = {
@@ -236,7 +244,7 @@ class Dymka:
 
     @command
     def deploy(self):
-        abi, bin = self.getContractData(args.contract)
+        abi, bin = self.getContractData()
         contract = self.w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
         ctor = contract.constructor(*arguments) if arguments else contract.constructor()
@@ -251,9 +259,9 @@ class Dymka:
 
     def buildContractSendTx(self, opts):
         function_name = args.arguments[0]
-        abi, _ = self.getContractData(args.contract)
+        abi, _ = self.getContractData()
         contract = self.w3.eth.contract(abi=abi,
-                                        address=self.getContractAddress(args.contract))
+                                        address=self.getContractAddress())
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
         func_bound = func(*arguments) if arguments else func()

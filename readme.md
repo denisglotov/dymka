@@ -117,7 +117,8 @@ Call contract
     $ dymka @myaccount -c demo call value
     {'result': 42}
 
-    $ dymka --from 0xCF3f5c33d396c958a06d17A5B9cCB80452DC2aBe -c demo call compare 45
+    $ dymka -c demo call compare 45
+    WARNING From account not specified, using 0x0000000000000000000000000000000000000000.
     {'result': [True, False]}
 
 
@@ -147,3 +148,10 @@ Other commands
 * `show` - display used provider and from address,
 * `transaction` - show transaction details for the given hash,
 * `receipt` - show receipt for the given hash.
+
+
+Troubleshooting
+---------------
+
+Use `-v` and `-vv` flags to see more information. File an issue
+https://github.com/denisglotov/dymka/issues/new so I try to help.
