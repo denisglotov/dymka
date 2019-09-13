@@ -8,10 +8,10 @@ import logging
 import os
 import traceback
 
-parser = argparse.ArgumentParser(description='Iteract with ethereum network.',
+parser = argparse.ArgumentParser(description='Interact with ethereum network.',
                                  fromfile_prefix_chars='@')
 parser.add_argument('command',
-                    help='command to do, see list below')
+                    help='version exec balance nonce deploy call send receipt ...'),
 parser.add_argument('arguments', nargs='*',
                     help='optional arguments to the command')
 parser.add_argument('-a', '--address',
@@ -23,7 +23,10 @@ parser.add_argument('-d', '--dry', action='store_true',
                     help='dry run, do not transact')
 parser.add_argument('-f', '--from', dest='from_account',
                     default=os.environ.get('WEB3_FROM', None),
-                    help='account name to transact from, defaults to env WEB3_FROM')
+                    help='account keystore filename, raw private key or account address, '
+                    'defaults to env WEB3_FROM')
+parser.add_argument('-j', '--contractJson',
+                    help='contract json path if different from contract name')
 parser.add_argument('-p', '--provider',
                     default=os.environ.get('WEB3_PROVIDER', 'http://localhost:8545'),
                     help='web3 proveder, defaults to env WEB3_PROVIDER or localhost:8545')
@@ -92,6 +95,7 @@ def getOptionalArguments(ord):
         arguments = eval('[' + ','.join(args.arguments[ord:]) + ']')
         log.debug('Arguments: %s', arguments)
         return arguments
+    return []
 
 
 class Dymka:
@@ -107,6 +111,8 @@ class Dymka:
                 with open(args.from_account) as keyfile:
                     encrypted_key = keyfile.read()
                     self.privKey = self.w3.eth.account.decrypt(encrypted_key, password)
+            elif args.from_account.startswith('0x'):
+                self.address_from = args.from_account
             else:
                 self.privKey = args.from_account
         if self.privKey:
@@ -145,7 +151,7 @@ class Dymka:
     def exec(self):
         function = args.arguments[0]
         arguments = getOptionalArguments(1)
-        return self.provider.make_request(function, *arguments if arguments else [[]])
+        return self.provider.make_request(function, *[arguments])
 
     @command
     def transaction(self):
@@ -164,41 +170,47 @@ class Dymka:
         return f'WEB3_CONTRACT_{name.upper()}'
 
     @classmethod
-    def getContractAddress(cls, name):
+    def getContractAddress(cls):
         if args.address:
             return args.address
-        envname = cls.getContractAddressEnv(name)
+        envname = cls.getContractAddressEnv(args.contract)
         address = os.environ.get(envname, None)
         if address:
-            log.info(f'Using contract {name} at {address}')
+            log.info(f'Using contract {args.contract} at {address}')
             return address
         raise ValueError(f'Need contract address, but neither --address nor {envname} set.')
 
     @staticmethod
-    def getContractData(name):
-        fname = name + '.json'
-        if not os.path.isfile(fname):
-            fname = name
+    def getContractData():
+        fname = args.contractJson
+        if not fname:
+            fname = args.contract + '.json'
+            if not os.path.isfile(fname):
+                fname = args.contract
         data = getJson(fname)
         contracts_section = data['contracts']
         contracts = [key for key in contracts_section.keys()
-                     if key.lower().endswith(name.lower())]
+                     if key.lower().endswith(args.contract.lower())]
         if len(contracts) != 1:
             raise ValueError(f'Ambigous or empty contract list {contracts} in json {fname} '
-                             f'for contract {name}.')
+                             f'for contract {args.contract}.')
         contract = contracts_section[contracts[0]]
         return contract['abi'], contract['bin']
 
     @command
     def call(self):
         function_name = args.arguments[0]
-        abi, _ = self.getContractData(args.contract)
+        abi, _ = self.getContractData()
         contract = self.w3.eth.contract(abi=abi,
-                                        address=self.getContractAddress(args.contract))
+                                        address=self.getContractAddress())
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
-        tx = func(*arguments) if arguments else func()
-        return {'result': tx.call({'from': self.address_from})}
+        tx = func(*arguments)
+        from_account = self.address_from
+        if not from_account:
+            from_account = '0x0000000000000000000000000000000000000000'
+            log.warn(f'From account not specified, using {from_account}.')
+        return {'result': tx.call({'from': from_account})}
 
     def getOpts(self):
         opts = {
@@ -233,10 +245,10 @@ class Dymka:
 
     @command
     def deploy(self):
-        abi, bin = self.getContractData(args.contract)
+        abi, bin = self.getContractData()
         contract = self.w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
-        ctor = contract.constructor(*arguments) if arguments else contract.constructor()
+        ctor = contract.constructor(*arguments)
         tx = ctor.buildTransaction(self.getOpts())
         status = self.transact(tx)
         if 'receipt' in status:
@@ -248,12 +260,12 @@ class Dymka:
 
     def buildContractSendTx(self, opts):
         function_name = args.arguments[0]
-        abi, _ = self.getContractData(args.contract)
+        abi, _ = self.getContractData()
         contract = self.w3.eth.contract(abi=abi,
-                                        address=self.getContractAddress(args.contract))
+                                        address=self.getContractAddress())
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
-        func_bound = func(*arguments) if arguments else func()
+        func_bound = func(*arguments)
         return func_bound.buildTransaction(opts)
 
     @command
@@ -265,7 +277,7 @@ class Dymka:
 
 if __name__ == "__main__":
     if args.command == 'version':
-        print('Version: 0.0.2')
+        print('Version: 1.0.0')
         exit(0)
     try:
         d = Dymka()

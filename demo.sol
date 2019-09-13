@@ -19,7 +19,7 @@ contract Demo {
         value = newValue;
     }
 
-    function teardown() public {
-        selfdestruct(msg.sender);
+    function teardown(address payable who) public {
+        selfdestruct(who);
     }
 }

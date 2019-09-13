@@ -1,13 +1,49 @@
 Dymka
 =====
 
-Minimalist command line tool for interacting with Ethereum-based blockchains.
+<img align="right" src="https://denisglotov.github.io/dymka/dymka.jpg">
+
+Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
 Install the tool:
 
     pip install --user dymka
 
 Following are the usage examples.
+
+
+Configuring provider and 'from' account
+---------------------------------------
+
+Unless your web3 provider is 'http://localhost:8545', you can use the
+`--provider` and specify it every time you run the tool. Or you may create a
+file `myprovider` with the following content:
+
+    --provider
+    https://rinkeby.infura.io/v3/...
+
+and run the tool with it: `dymka @myprovider exec eth_blockNumber`. Or you may
+use environment variable like the following:
+
+    export WEB3_PROVIDER=https://rinkeby.infura.io/v3/...
+
+To specify the account that you use to transact from, use `--from` to specify
+account keystore file (and `--password` to specify the file with its pass
+phrase) or specify a private key.
+
+Similarly to above, you can put this to a file, say `myaccount`:
+
+    --from
+    account.json
+    --password
+    account.password.txt
+
+and run the tool with it: `dymka @myprovider @myaccount balance`. Or just
+
+    export WEB3_FROM=...
+
+In the following examples I assume you specify both provider and 'from'
+account.
 
 
 Raw RPC requests
@@ -28,9 +64,10 @@ Raw RPC requests
      'jsonrpc': '2.0',
       'result': '0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad'}
 
-See https://github.com/ethereum/wiki/wiki/JSON-RPC and
-https://github.com/ethereum/go-ethereum/wiki/Management-APIs for more.
+See ethereum wiki [JSON-RPC] and [Management APIs] for more details.
 
+[JSON-RPC]: https://github.com/ethereum/wiki/wiki/JSON-RPC
+[Management APIs]: https://github.com/ethereum/go-ethereum/wiki/Management-APIs
 
 Balance and nonce of accounts
 -----------------------------
@@ -115,3 +152,35 @@ Other commands
 * `show` - display used provider and from address,
 * `transaction` - show transaction details for the given hash,
 * `receipt` - show receipt for the given hash.
+
+
+Note about arguments
+--------------------
+
+Arguments for deploy, call and send contracts are first evaluated with python
+(`eval()`). Thus addresses should be quoted twice like the following.
+
+    $ dymka -c demo send teardown "\"0x0000000000000000000000000000000000000000\""
+
+The outer quotes are consumed by your shell (e.g. bash) and the inner
+(escaped) quotes are consumed by python to make sure your address is not
+evaluated to the plain number 0. Use `-vd` (verbose and dry run) to see how
+your arguments are evaluated.
+
+<img align="right" src="https://denisglotov.github.io/dymka/0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.png">
+
+
+Troubleshooting
+---------------
+
+Use `-v` and `-vv` flags to see more information. File an issue
+https://github.com/denisglotov/dymka/issues/new so I try to help.
+
+
+Donate
+------
+
+If you find the tool useful, please donate to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.
+
+
+Happy hacking 🐱.
