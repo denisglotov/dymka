@@ -3,7 +3,7 @@ Dymka
 
 <img align="right" src="https://denisglotov.github.io/dymka/dymka.jpg">
 
-Minimalist command line tool for interacting with Ethereum-based blockchains.
+Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
 Install the tool:
 
@@ -23,7 +23,7 @@ file `myprovider` with the following content:
     https://rinkeby.infura.io/v3/...
 
 and run the tool with it: `dymka @myprovider exec eth_blockNumber`. Or you may
-use evironment variable like the following:
+use environment variable like the following:
 
     export WEB3_PROVIDER=https://rinkeby.infura.io/v3/...
 
@@ -38,7 +38,12 @@ Similarly to above, you can put this to a file, say `myaccount`:
     --password
     account.password.txt
 
-and run the tool with it: `dymka @myprovider @myaccount balance`.
+and run the tool with it: `dymka @myprovider @myaccount balance`. Or just
+
+    export WEB3_FROM=...
+
+In the following examples I assume you specify both provider and 'from'
+account.
 
 
 Raw RPC requests
@@ -59,10 +64,10 @@ Raw RPC requests
      'jsonrpc': '2.0',
       'result': '0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad'}
 
-See ethereum wiki [JSON-RPC] and [Managment APIs] for more details.
+See ethereum wiki [JSON-RPC] and [Management APIs] for more details.
 
 [JSON-RPC]: https://github.com/ethereum/wiki/wiki/JSON-RPC
-[Managment APIs]: https://github.com/ethereum/go-ethereum/wiki/Management-APIs
+[Management APIs]: https://github.com/ethereum/go-ethereum/wiki/Management-APIs
 
 Balance and nonce of accounts
 -----------------------------
@@ -77,7 +82,7 @@ Balance and nonce of accounts
 Send money
 ----------
 
-    dymka @myaccount send --to 0x97E6aF105A1061975fdA6C6D0e7544b7C3600EBC --value 1000000000000000000 --gasPrice 1000000000 -e
+    dymka send --to 0x97E6aF105A1061975fdA6C6D0e7544b7C3600EBC --value 1000000000000000000 --gasPrice 1000000000 -e
 
 Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you
 can specify `--gas 21000`.
@@ -95,7 +100,7 @@ There is [demo](demo.sol) contract, compile it like the following so we get
 Deploy contract
 ---------------
 
-    $ dymka @myaccount deploy -c demo
+    $ dymka deploy -c demo
     {'hash': '0xe4a8eeb6dc8a21e430077d460d2618c6a0a380e71dfecadcf4ceb252bae729b3',
      'receipt': {...
                  'contractAddress': '0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A',
@@ -114,19 +119,18 @@ the contract with `-a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A`.
 Call contract
 -------------
 
-    $ dymka @myaccount -c demo call value
+    $ dymka -c demo call value
     {'result': 42}
 
     $ dymka -c demo call compare 45
-    WARNING From account not specified, using 0x0000000000000000000000000000000000000000.
     {'result': [True, False]}
 
 
 Invoke contract
 ---------------
 
-    dymka @myaccount -c demo send set 42 100
-    dymka @myaccount -c demo send act
+    dymka -c demo send set 42 100
+    dymka -c demo send act
 
 If you need to send money to the contract, use `--value`.
 
@@ -150,8 +154,33 @@ Other commands
 * `receipt` - show receipt for the given hash.
 
 
+Note about arguments
+--------------------
+
+Arguments for deploy, call and send contracts are first evaluated with python
+(`eval()`). Thus addresses should be quoted twice like the following.
+
+    $ dymka -c demo send teardown "\"0x0000000000000000000000000000000000000000\""
+
+The outer quotes are consumed by your shell (e.g. bash) and the inner
+(escaped) quotes are consumed by python to make sure your address is not
+evaluated to the plain number 0. Use `-vd` (verbose and dry run) to see how
+your arguments are evaluated.
+
+
 Troubleshooting
 ---------------
 
 Use `-v` and `-vv` flags to see more information. File an issue
 https://github.com/denisglotov/dymka/issues/new so I try to help.
+
+
+Donate
+------
+
+<img align="right" src="https://denisglotov.github.io/dymka/0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.png">
+
+If you find the tool useful, please donate to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.
+
+
+Happy hacking 🐱.

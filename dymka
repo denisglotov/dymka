@@ -95,6 +95,7 @@ def getOptionalArguments(ord):
         arguments = eval('[' + ','.join(args.arguments[ord:]) + ']')
         log.debug('Arguments: %s', arguments)
         return arguments
+    return []
 
 
 class Dymka:
@@ -150,7 +151,7 @@ class Dymka:
     def exec(self):
         function = args.arguments[0]
         arguments = getOptionalArguments(1)
-        return self.provider.make_request(function, *arguments if arguments else [[]])
+        return self.provider.make_request(function, *[arguments])
 
     @command
     def transaction(self):
@@ -204,7 +205,7 @@ class Dymka:
                                         address=self.getContractAddress())
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
-        tx = func(*arguments) if arguments else func()
+        tx = func(*arguments)
         from_account = self.address_from
         if not from_account:
             from_account = '0x0000000000000000000000000000000000000000'
@@ -247,7 +248,7 @@ class Dymka:
         abi, bin = self.getContractData()
         contract = self.w3.eth.contract(abi=abi, bytecode=bin)
         arguments = getOptionalArguments(0)
-        ctor = contract.constructor(*arguments) if arguments else contract.constructor()
+        ctor = contract.constructor(*arguments)
         tx = ctor.buildTransaction(self.getOpts())
         status = self.transact(tx)
         if 'receipt' in status:
@@ -264,7 +265,7 @@ class Dymka:
                                         address=self.getContractAddress())
         arguments = getOptionalArguments(1)
         func = contract.functions[function_name]
-        func_bound = func(*arguments) if arguments else func()
+        func_bound = func(*arguments)
         return func_bound.buildTransaction(opts)
 
     @command

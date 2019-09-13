@@ -8,7 +8,7 @@ with open('readme.md', 'r') as fh:
         version='1.0.0',
         author='Denis Glotov',
         author_email='denis@glotov.org',
-        description='Swiss knife cli for Ethereum-based blockchains',
+        description='Swiss-knife cli for Ethereum-based blockchains',
         long_description=long_description,
         long_description_content_type='text/markdown',
         url='https://github.com/denisglotov/dymka.git',
