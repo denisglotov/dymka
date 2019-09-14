@@ -3,6 +3,8 @@ Dymka
 
 <img align="right" src="https://denisglotov.github.io/dymka/dymka.jpg">
 
+<img src="https://travis-ci.org/denisglotov/dymka.svg?branch=master" alt="build:">
+
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
 Install the tool:
@@ -91,8 +93,8 @@ can specify `--gas 21000`.
 Compile contract
 ----------------
 
-There is [demo](demo.sol) contract, compile it like the following so we get
-`demo.json`.
+There is [Demo](tests/demo.sol) contract, compile it like the following so we
+get `demo.json`.
 
     solc --combined-json abi,bin --optimize demo.sol >demo.json
 
