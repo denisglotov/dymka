@@ -17,5 +17,4 @@ install:
   - sleep 5
 
 script:
-  - cd tests
-  - test.sh
+  - tests/test.sh
