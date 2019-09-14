@@ -14,6 +14,7 @@ env:
 install:
   - pip install .
   - docker run -d --rm trufflesuite/ganache-cli:latest --account="0x${WEB3_FROM},10"
+  - sleep 5
 
 script:
   - dymka version
