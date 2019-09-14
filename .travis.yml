@@ -13,7 +13,7 @@ env:
 
 install:
   - pip install .
-  - docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest \
+  - docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest
                                --account="0x${WEB3_FROM},1000000000000000000"
   - sleep 4
 
