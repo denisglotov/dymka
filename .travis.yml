@@ -13,8 +13,8 @@ env:
 
 install:
   - pip install .
-  - docker run -dit --rm --name ganache-cli trufflesuite/ganache-cli:latest --account="0x${WEB3_FROM},1"
-  - docker wait ganache-cli
+  - docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest --account="0x${WEB3_FROM},1"
+  - while ! nc -z localhost 8545; do sleep 0.5; echo -n '.'; done
 
 script:
   - dymka version
