@@ -3,6 +3,8 @@ Dymka
 
 <img align="right" src="https://denisglotov.github.io/dymka/dymka.jpg">
 
+<img src="https://travis-ci.org/denisglotov/dymka.svg?branch=dev" alt="build:">
+
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
 Install the tool:
