@@ -4,7 +4,7 @@ cd $(dirname $0)
 dymka version
 dymka balance
 
-if [ ! -e WEB3_FROM ]; then
+if [ ! -v WEB3_FROM ]; then
     echo "WEB3_FROM must be set for this script to run"
     exit 1
 fi
