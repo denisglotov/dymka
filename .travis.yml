@@ -8,10 +8,13 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y jq
 
+env:
+  WEB3_FROM=68d20faeaf9ac405bd32a98ba0835bbd14bbc4ffdedb60ea3a67329819b4d7a8 # test only key
+
 install:
   - pip install .
-  - docker run trufflesuite/ganache-cli:latest --account="0x68d20faeaf9ac405bd32a98ba0835bbd14bbc4ffdedb60ea3a67329819b4d7a8,10"
+  - docker run -d --rm trufflesuite/ganache-cli:latest --account="0x${WEB3_FROM},10"
 
 script:
   - dymka version
-  - dymka show
+  - dymka balance
