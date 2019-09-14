@@ -7,7 +7,7 @@ before_install:
   - sudo apt-get install -y jq
 
 install:
-  - pip3 install --user .
+  - pip install .
 
 script:
   - dymka version
