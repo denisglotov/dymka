@@ -91,8 +91,8 @@ can specify `--gas 21000`.
 Compile contract
 ----------------
 
-There is [demo](demo.sol) contract, compile it like the following so we get
-`demo.json`.
+There is [Demo](tests/demo.sol) contract, compile it like the following so we
+get `demo.json`.
 
     solc --combined-json abi,bin --optimize demo.sol >demo.json
 
