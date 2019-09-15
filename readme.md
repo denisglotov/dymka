@@ -1,8 +1,6 @@
 Dymka
 =====
 
-<img align="right" src="https://denisglotov.github.io/dymka/dymka.jpg">
-
 [![Build status](https://travis-ci.org/denisglotov/dymka.svg?branch=master)](https://travis-ci.org/denisglotov/dymka)
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
@@ -173,16 +171,18 @@ your arguments are evaluated.
 Troubleshooting
 ---------------
 
-Use `-v` and `-vv` flags to see more information. File an issue
-https://github.com/denisglotov/dymka/issues/new so I try to help.
+Use `-v` and `-vv` flags to see more information. File an [issue]
+or send a pull request so I try to help and review.
+
+[issue]: https://github.com/denisglotov/dymka/issues/new
 
 
 Donate
 ------
 
-<img align="right" src="https://denisglotov.github.io/dymka/0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.png">
+If you find the tool useful, please donate to ethereum address
+0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.
 
-If you find the tool useful, please donate to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.
-
+![qr](https://denisglotov.github.io/dymka/0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.png)
 
 Happy hacking 🐱.
