@@ -3,7 +3,7 @@ Dymka
 
 <img align="right" src="https://denisglotov.github.io/dymka/dymka.jpg">
 
-<img src="https://travis-ci.org/denisglotov/dymka.svg?branch=master" alt="build:">
+[![Build status](https://travis-ci.org/denisglotov/dymka.svg?branch=master")](https://travis-ci.org/denisglotov/dymka)
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
@@ -169,8 +169,6 @@ The outer quotes are consumed by your shell (e.g. bash) and the inner
 evaluated to the plain number 0. Use `-vd` (verbose and dry run) to see how
 your arguments are evaluated.
 
-<img align="right" src="https://denisglotov.github.io/dymka/0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.png">
-
 
 Troubleshooting
 ---------------
@@ -181,6 +179,8 @@ https://github.com/denisglotov/dymka/issues/new so I try to help.
 
 Donate
 ------
+
+<img align="right" src="https://denisglotov.github.io/dymka/0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.png">
 
 If you find the tool useful, please donate to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055.
 
