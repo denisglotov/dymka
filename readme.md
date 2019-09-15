@@ -3,7 +3,7 @@ Dymka
 
 <img align="right" src="https://denisglotov.github.io/dymka/dymka.jpg">
 
-[![Build status](https://travis-ci.org/denisglotov/dymka.svg?branch=master")](https://travis-ci.org/denisglotov/dymka)
+[![Build status](https://travis-ci.org/denisglotov/dymka.svg?branch=master)](https://travis-ci.org/denisglotov/dymka)
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
