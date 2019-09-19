@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-
-from web3 import Web3, HTTPProvider, datastructures
+from web3 import Web3, HTTPProvider, datastructures, exceptions
 from hexbytes import HexBytes
 import argparse
 import json
@@ -157,12 +156,6 @@ class Dymka:
         tx = self.w3.eth.getTransaction(hash)
         return dict(tx)
 
-    @command
-    def receipt(self):
-        hash = args.arguments[0]
-        receipt = self.w3.eth.getTransactionReceipt(hash)
-        return dict(receipt)
-
     @staticmethod
     def getContractAddressEnv(name):
         return f'WEB3_CONTRACT_{name.upper()}'
@@ -176,10 +169,10 @@ class Dymka:
         if address:
             log.info(f'Using contract {args.contract} at {address}')
             return address
-        raise ValueError(f'Need contract address, but neither --address nor {envname} set.')
+        raise ValueError(f'Need contract address, but neither --address nor {envname} '
+                         'is set')
 
-    @staticmethod
-    def getContractData():
+    def getContract(self, **kwargs):
         fname = args.contractJson
         if not fname:
             fname = args.contract + '.json'
@@ -190,17 +183,40 @@ class Dymka:
         contracts = [key for key in contracts_section.keys()
                      if key.lower().endswith(args.contract.lower())]
         if len(contracts) != 1:
-            raise ValueError(f'Ambigous or empty contract list {contracts} in json {fname} '
-                             f'for contract {args.contract}.')
+            raise ValueError(f'Ambigous or empty contract list {contracts} in json '
+                             f'{fname} for contract {args.contract}.')
         contract = contracts_section[contracts[0]]
-        return contract['abi'], contract['bin']
+        return self.w3.eth.contract(abi=contract['abi'],
+                                    bytecode=contract['bin'],
+                                    **kwargs)
+
+    def getTxReceipt(self, hash):
+        receipt = dict(self.w3.eth.getTransactionReceipt(hash))
+        if args.contract:
+            contract = self.getContract()
+            logs = []
+            for log in receipt['logs']:
+                processed = False
+                for evt in contract.events:
+                    try:
+                        logs.append(contract.events[evt.event_name]().processLog(log))
+                        processed = True
+                        break
+                    except exceptions.MismatchedABI:
+                        pass
+                if not processed:
+                    logs.append(log)
+            receipt['logs'] = logs
+        return receipt
+
+    @command
+    def receipt(self):
+        return self.getTxReceipt(args.arguments[0])
 
     @command
     def call(self):
         function_name = args.arguments[0]
-        abi, _ = self.getContractData()
-        contract = self.w3.eth.contract(abi=abi,
-                                        address=self.getContractAddress())
+        contract = self.getContract(address=self.getContractAddress())
         func = contract.functions[function_name]
         tx = func(*getOptionalArguments(1))
         from_account = self.address_from
@@ -237,13 +253,12 @@ class Dymka:
             self.w3.eth.waitForTransactionReceipt(hash, timeout=args.timeout)
         except Exception:
             raise ValueError(f'Timeout waiting {args.timeout}s for transaction {hash.hex()}')
-        status['receipt'] = dict(self.w3.eth.getTransactionReceipt(hash))
+        status['receipt'] = self.getTxReceipt(hash)
         return status
 
     @command
     def deploy(self):
-        abi, bin = self.getContractData()
-        contract = self.w3.eth.contract(abi=abi, bytecode=bin)
+        contract = self.getContract()
         ctor = contract.constructor(*getOptionalArguments(0))
         tx = ctor.buildTransaction(self.getOpts())
         status = self.transact(tx)
@@ -253,12 +268,9 @@ class Dymka:
                      f'export {self.getContractAddressEnv(args.contract)}={address}')
         return status
 
-
     def buildContractSendTx(self, opts):
         function_name = args.arguments[0]
-        abi, _ = self.getContractData()
-        contract = self.w3.eth.contract(abi=abi,
-                                        address=self.getContractAddress())
+        contract = self.getContract(address=self.getContractAddress())
         func = contract.functions[function_name]
         func_bound = func(*getOptionalArguments(1))
         return func_bound.buildTransaction(opts)
@@ -281,7 +293,7 @@ class EthereumEncoder(json.JSONEncoder):
 
 if __name__ == "__main__":
     if args.command == 'version':
-        print('Version: 1.0.2')
+        print('Version: 1.0.3')
         exit(0)
     try:
         d = Dymka()
