@@ -3,6 +3,11 @@ Dymka
 
 [![Build status]](https://travis-ci.org/denisglotov/dymka)
 [![Pypi version]](https://pypi.org/project/dymka/)
+[![Python version]](https://pypi.org/project/dymka/)
+
+[Build status]: https://travis-ci.org/denisglotov/dymka.svg?branch=master
+[Pypi version]: https://img.shields.io/pypi/v/dymka.svg
+[Python version]: https://img.shields.io/pypi/pyversions/dymka.svg
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
@@ -11,9 +16,6 @@ Install the tool:
     pip3 install --user dymka
 
 Following are the usage examples.
-
-[Build status]: https://travis-ci.org/denisglotov/dymka.svg?branch=master
-[Pypi version]: https://img.shields.io/pypi/v/dymka.svg
 
 
 Configuring provider and 'from' account
