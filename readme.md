@@ -3,11 +3,9 @@ Dymka
 
 [![Build status]](https://travis-ci.org/denisglotov/dymka)
 [![Pypi version]](https://pypi.org/project/dymka/)
-[![Python version]](https://pypi.org/project/dymka/)
 
 [Build status]: https://travis-ci.org/denisglotov/dymka.svg?branch=master
 [Pypi version]: https://img.shields.io/pypi/v/dymka.svg
-[Python version]: https://img.shields.io/pypi/pyversions/dymka.svg
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
@@ -127,10 +125,11 @@ can specify `--gas 21000`.
 Compile contract
 ----------------
 
-There is [Demo](tests/demo.sol) contract, compile it like the following so we
-get `demo.json`.
+There is [Demo] contract, compile it like the following so we get `demo.json`.
 
     solc --combined-json abi,bin --optimize demo.sol >demo.json
+
+[Demo]: https://github.com/denisglotov/dymka/blob/master/tests/demo.sol
 
 
 Deploy contract
