@@ -1,13 +1,17 @@
 Dymka
 =====
 
-[![Build status](https://travis-ci.org/denisglotov/dymka.svg?branch=master)](https://travis-ci.org/denisglotov/dymka)
+[![Build status]](https://travis-ci.org/denisglotov/dymka)
+[![Pypi version]](https://pypi.org/project/dymka/)
+
+[Build status]: https://travis-ci.org/denisglotov/dymka.svg?branch=master
+[Pypi version]: https://img.shields.io/pypi/v/dymka.svg
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
 
 Install the tool:
 
-    pip install --user dymka
+    pip3 install --user dymka
 
 Following are the usage examples.
 
@@ -50,39 +54,69 @@ Raw RPC requests
 ----------------
 
     $ dymka exec web3_clientVersion
-    {'id': 0,
-     'jsonrpc': '2.0',
-      'result': 'Geth/v1.8.25-omnibus-c41559d0/linux-amd64/go1.11.1'}
+    {
+        "id": 0,
+        "jsonrpc": "2.0",
+        "result": "EthereumJS TestRPC/v2.8.0/ethereum-js"
+    }
 
     $ dymka exec rpc_modules
-    {'id': 0,
-     'jsonrpc': '2.0',
-      'result': {'eth': '1.0', 'net': '1.0', 'rpc': '1.0', 'web3': '1.0'}}
+    {
+        "id": 0,
+        "jsonrpc": "2.0",
+        "result": {
+            "eth": "1.0",
+            "net": "1.0",
+            "rpc": "1.0",
+            "web3": "1.0",
+            "evm": "1.0",
+            "personal": "1.0"
+        }
+    }
 
-    $ dymka exec web3_sha3 "0x68656c6c6f20776f726c64"
-    {'id': 0,
-     'jsonrpc': '2.0',
-      'result': '0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad'}
+    $ dymka exec web3_sha3 "'0x68656c6c6f20776f726c64'"
+    $ dymka exec web3_sha3 "'hello world'"
+    {
+        "id": 0,
+        "jsonrpc": "2.0",
+        "result": "0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad"
+    }
+
+See [note about arguments] below for why we need double quotes here.
 
 See ethereum wiki [JSON-RPC] and [Management APIs] for more details.
 
+[note about arguments]: #note-about-arguments
 [JSON-RPC]: https://github.com/ethereum/wiki/wiki/JSON-RPC
 [Management APIs]: https://github.com/ethereum/go-ethereum/wiki/Management-APIs
+
 
 Balance and nonce of accounts
 -----------------------------
 
-    $ dymka balance 0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875
-    [{'account': '0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875', 'result': 0}]
+    $ dymka balance 0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5
+    [
+        {
+            "account": "0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5",
+            "result": 99945104760000000000
+        }
+    ]
 
-    $ dymka nonce 0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875
-    [{'account': '0x2ae307B3d04E60cBeAcdbE4cb95e811d496BA875', 'result': 0}]
+    $ dymka nonce 0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5
+    [
+        {
+            "account": "0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5",
+            "result": 40
+        }
+    ]
 
 
 Send money
 ----------
 
-    dymka send --to 0x97E6aF105A1061975fdA6C6D0e7544b7C3600EBC --value 1000000000000000000 --gasPrice 1000000000 -e
+    dymka send --to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055 \
+               --value 1000000000000000000 \
+               --gasPrice 1000000000 -e
 
 Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you
 can specify `--gas 21000`.
@@ -91,20 +125,23 @@ can specify `--gas 21000`.
 Compile contract
 ----------------
 
-There is [Demo](tests/demo.sol) contract, compile it like the following so we
-get `demo.json`.
+There is [Demo] contract, compile it like the following so we get `demo.json`.
 
     solc --combined-json abi,bin --optimize demo.sol >demo.json
+
+[Demo]: https://github.com/denisglotov/dymka/blob/master/tests/demo.sol
 
 
 Deploy contract
 ---------------
 
-    $ dymka deploy -c demo
-    {'hash': '0xe4a8eeb6dc8a21e430077d460d2618c6a0a380e71dfecadcf4ceb252bae729b3',
-     'receipt': {...
-                 'contractAddress': '0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A',
-                 ...}
+    $ dymka -c demo deploy
+    {
+        "hash": "0xe4a8eeb6dc8a21e430077d460d2618c6a0a380e71dfecadcf4ceb252bae729b3",
+        "receipt": {...
+            "contractAddress": "0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A",
+            ...}
+    }
 
 If you need to send money to the contract being deployed, use `--value`.
 
@@ -120,10 +157,17 @@ Call contract
 -------------
 
     $ dymka -c demo call value
-    {'result': 42}
+    {
+        "result": 42
+    }
 
     $ dymka -c demo call compare 45
-    {'result': [True, False]}
+    {
+        "result": [
+            false,
+            true
+        ]
+    }
 
 
 Invoke contract
@@ -142,7 +186,9 @@ Displays gas price of the current provider
 ([web3.eth.gasPrice](https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#getgasprice)).
 
     $ dymka gas
-    {'gasPrice': 1000000000}
+    {
+        "gasPrice": 20000000000
+    }
 
 
 Other commands
