@@ -179,6 +179,8 @@ class Dymka:
             if not os.path.isfile(fname):
                 fname = args.contract
         data = getJson(fname)
+        if isinstance(data, list):
+            return self.w3.eth.contract(abi=data, **kwargs)
         contracts_section = data['contracts']
         contracts = [key for key in contracts_section.keys()
                      if key.lower().endswith(args.contract.lower())]
@@ -293,7 +295,7 @@ class EthereumEncoder(json.JSONEncoder):
 
 if __name__ == "__main__":
     if args.command == 'version':
-        print('Version: 1.0.3')
+        print('Version: 1.0.4')
         exit(0)
     try:
         d = Dymka()
