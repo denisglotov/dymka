@@ -198,6 +198,7 @@ Other commands
 * `show` - display used provider and from address,
 * `transaction` - show transaction details for the given hash,
 * `receipt` - show receipt for the given hash.
+* `help` - shows full list of commands and short command description.
 
 
 Note about arguments

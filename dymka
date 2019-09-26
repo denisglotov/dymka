@@ -10,7 +10,7 @@ import traceback
 parser = argparse.ArgumentParser(description='Interact with ethereum network.',
                                  fromfile_prefix_chars='@')
 parser.add_argument('command',
-                    help='version exec balance nonce deploy call send receipt ...'),
+                    help='help version exec balance nonce deploy call send receipt ...'),
 parser.add_argument('arguments', nargs='*',
                     help='optional arguments to the command')
 parser.add_argument('-a', '--address',
@@ -28,7 +28,7 @@ parser.add_argument('-j', '--contractJson',
                     help='contract json path if different from contract name')
 parser.add_argument('-p', '--provider',
                     default=os.environ.get('WEB3_PROVIDER', 'http://localhost:8545'),
-                    help='web3 proveder, defaults to env WEB3_PROVIDER or localhost:8545')
+                    help='web3 provider, defaults to env WEB3_PROVIDER or localhost:8545')
 parser.add_argument('-t', '--to',
                     help='account address to transact to')
 parser.add_argument('--chainId', type=int,
@@ -38,7 +38,7 @@ parser.add_argument('--password', type=argparse.FileType('r'),
 parser.add_argument('--gasPrice', type=int,
                     help='explicitly set gas price')
 parser.add_argument('--nonce',
-                    help='excplicitly set nonce')
+                    help='explicitly set nonce')
 parser.add_argument('--timeout', type=int, default=120,
                     help='timeout to wait after the transaction, default is 120s')
 parser.add_argument('--value', type=int,
@@ -60,12 +60,12 @@ args = parser.parse_args()
 
 
 def getLogger(defaultLevel):
-    log = logging.getLogger('dymka')
+    log = logging.getLogger(__name__)
     if args.verbose:
         defaultLevel -= 10*args.verbose
     if args.quiet:
         defaultLevel += 10*args.quiet
-    log.setLevel(defaultLevel)
+    log.setLevel(max(defaultLevel, logging.DEBUG))
     stream = logging.StreamHandler()
     stream.setFormatter(logging.Formatter('%(levelname)s %(message)s'))
     log.addHandler(stream)
@@ -110,15 +110,18 @@ class Dymka:
                 with open(args.from_account) as keyfile:
                     encrypted_key = keyfile.read()
                     self.privKey = self.w3.eth.account.decrypt(encrypted_key, password)
-            elif args.from_account.startswith('0x'):
-                self.address_from = args.from_account
             else:
                 self.privKey = args.from_account
         if self.privKey:
-            self.address_from = self.w3.eth.account.from_key(self.privKey).address
+            try:
+                self.address_from = self.w3.eth.account.from_key(self.privKey).address
+            except ValueError:
+                log.debug(f'Using address {args.from_account}.')
+                self.address_from = args.from_account
 
     @command
     def show(self):
+        """Shows configuration used."""
         status = {'provider': args.provider}
         if self.address_from:
             status['address'] = self.address_from
@@ -126,32 +129,39 @@ class Dymka:
 
     @command
     def gas(self):
+        """Returns current gas price."""
         return {'gasPrice': self.w3.eth.gasPrice}
 
     @staticmethod
     def processAccounts(fn, *vargs):
+        """Applies functor `fn` to program arguments and function vargs."""
         return list(map(lambda a: a and {'account': a, 'result': fn(a)},
                         [*args.arguments, *filter(None, vargs)]))
 
     @command
     def checksum(self):
+        """Calculate address string representation with correct web3 checksum."""
         return self.processAccounts(Web3.toChecksumAddress, self.address_from, args.to)
 
     @command
     def balance(self):
+        """Returns balance of all provided arguments and --from account."""
         return self.processAccounts(self.w3.eth.getBalance, self.address_from, args.to)
 
     @command
     def nonce(self):
+        """Returns nonce for all provided arguments and --from account."""
         return self.processAccounts(self.w3.eth.getTransactionCount,
                                     self.address_from, args.to)
 
     @command
     def exec(self):
+        """Executes given JSON-RPC command."""
         return self.provider.make_request(args.arguments[0], *[getOptionalArguments(1)])
 
     @command
     def transaction(self):
+        """Returns transaction with the given hash."""
         hash = args.arguments[0]
         tx = self.w3.eth.getTransaction(hash)
         return dict(tx)
@@ -162,28 +172,39 @@ class Dymka:
 
     @classmethod
     def getContractAddress(cls):
+        """Discovers contract address from --address or --contract arguments."""
         if args.address:
             return args.address
-        envname = cls.getContractAddressEnv(args.contract)
-        address = os.environ.get(envname, None)
-        if address:
-            log.info(f'Using contract {args.contract} at {address}')
-            return address
-        raise ValueError(f'Need contract address, but neither --address nor {envname} '
-                         'is set')
+        if args.contract:
+            envname = cls.getContractAddressEnv(args.contract)
+            address = os.environ.get(envname, None)
+            if address:
+                log.info(f'Using contract {args.contract} at {address}.')
+                return address
+            raise ValueError(f'Need contract address, but neither --address nor '
+                             f'{envname} is set.')
+        raise ValueError('Need contract address, but neither --address nor --contract '
+                         'is set.')
 
     def getContract(self, **kwargs):
+        """Returns contract object discovered from --contract and --contractJson
+        arguments.
+
+        """
         fname = args.contractJson
         if not fname:
             fname = args.contract + '.json'
             if not os.path.isfile(fname):
                 fname = args.contract
         data = getJson(fname)
+        if isinstance(data, list):
+            log.debug(f'Using contract ABI from {fname}.')
+            return self.w3.eth.contract(abi=data, **kwargs)
         contracts_section = data['contracts']
         contracts = [key for key in contracts_section.keys()
                      if key.lower().endswith(args.contract.lower())]
         if len(contracts) != 1:
-            raise ValueError(f'Ambigous or empty contract list {contracts} in json '
+            raise ValueError(f'Ambiguous or empty contract list {contracts} in json '
                              f'{fname} for contract {args.contract}.')
         contract = contracts_section[contracts[0]]
         return self.w3.eth.contract(abi=contract['abi'],
@@ -211,10 +232,17 @@ class Dymka:
 
     @command
     def receipt(self):
+        """Returns transaction receipt with the given hash."""
         return self.getTxReceipt(args.arguments[0])
 
     @command
     def call(self):
+        """
+        Call the specified contract function with the specified parameters, if
+        any.  Note, that this is not a transaction, but just a query. No
+        blockchain data may change.
+
+        """
         function_name = args.arguments[0]
         contract = self.getContract(address=self.getContractAddress())
         func = contract.functions[function_name]
@@ -226,6 +254,7 @@ class Dymka:
         return {'result': tx.call({'from': from_account})}
 
     def getOpts(self):
+        """Prepare options for making a transaction."""
         opts = {
             'from': self.address_from,
             'nonce': args.nonce or self.w3.eth.getTransactionCount(self.address_from)
@@ -258,6 +287,12 @@ class Dymka:
 
     @command
     def deploy(self):
+        """
+        Deploy the given contract. Pass arguments to its constructor, if
+        needed. Note that full contract data JSON must be provided, not just
+        ABI.
+
+        """
         contract = self.getContract()
         ctor = contract.constructor(*getOptionalArguments(0))
         tx = ctor.buildTransaction(self.getOpts())
@@ -277,6 +312,10 @@ class Dymka:
 
     @command
     def send(self):
+        """
+        Invoke the specified function for the specified contract. Pass arguments,
+        if needed.
+        """
         opts = self.getOpts()
         tx = opts if not args.contract else self.buildContractSendTx(opts)
         return self.transact(tx)
@@ -293,14 +332,20 @@ class EthereumEncoder(json.JSONEncoder):
 
 if __name__ == "__main__":
     if args.command == 'version':
-        print('Version: 1.0.3')
+        print('Version: 1.0.4')
+        exit(0)
+    elif args.command == 'help':
+        if args.arguments:
+            print(dispatch[args.arguments[0]].__doc__)
+        else:
+            print(f'Specify a command for help: {list(dispatch.keys())}.')
         exit(0)
     try:
         d = Dymka()
         result = dispatch[args.command](d)
         print(json.dumps(result, cls=EthereumEncoder, indent=4))
     except Exception as e:
-        if log.isEnabledFor(logging.DEBUG):
+        if args.verbose and args.verbose > 1:
             traceback.print_exc()
         else:
             log.error(e)

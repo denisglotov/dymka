@@ -41,8 +41,8 @@ echo "Invoke its set(43, 100) function."
 dymka -c demo send set 43 100
 
 echo
-echo "Call value() function. Must be 100."
-RES=$(dymka -c demo call value | jq -r ".result")
+echo "Call value() function (with abi only). Must be 100."
+RES=$(dymka -j demo.abi.json -c demo call value | jq -r ".result")
 [ "$RES" == "100" ] || die "Wrong value $RES"
 
 echo
