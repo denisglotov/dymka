@@ -162,17 +162,25 @@ class Dymka:
 
     @classmethod
     def getContractAddress(cls):
+        """Discovers contract address from --address or --contract arguments."""
         if args.address:
             return args.address
-        envname = cls.getContractAddressEnv(args.contract)
-        address = os.environ.get(envname, None)
-        if address:
-            log.info(f'Using contract {args.contract} at {address}')
-            return address
-        raise ValueError(f'Need contract address, but neither --address nor {envname} '
-                         'is set')
+        if args.contract:
+            envname = cls.getContractAddressEnv(args.contract)
+            address = os.environ.get(envname, None)
+            if address:
+                log.info(f'Using contract {args.contract} at {address}.')
+                return address
+            raise ValueError(f'Need contract address, but neither --address nor '
+                             f'{envname} is set.')
+        raise ValueError('Need contract address, but neither --address nor --contract '
+                         'is set.')
 
     def getContract(self, **kwargs):
+        """Returns contract object discovered from --contract and --contractJson
+        argumennts.
+
+        """
         fname = args.contractJson
         if not fname:
             fname = args.contract + '.json'
@@ -180,6 +188,7 @@ class Dymka:
                 fname = args.contract
         data = getJson(fname)
         if isinstance(data, list):
+            log.debug(f'Using contract ABI from {fname}.')
             return self.w3.eth.contract(abi=data, **kwargs)
         contracts_section = data['contracts']
         contracts = [key for key in contracts_section.keys()
