@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
 from web3 import Web3, HTTPProvider, datastructures, exceptions
 from hexbytes import HexBytes
 import argparse
@@ -6,10 +7,11 @@ import json
 import logging
 import os
 import traceback
+import getpass
 
 parser = argparse.ArgumentParser(description='Interact with ethereum network.',
                                  fromfile_prefix_chars='@')
-parser.add_argument('command',
+parser.add_argument('command', nargs='?',
                     help='help version exec balance nonce deploy call send receipt ...'),
 parser.add_argument('arguments', nargs='*',
                     help='optional arguments to the command')
@@ -43,6 +45,8 @@ parser.add_argument('--timeout', type=int, default=120,
                     help='timeout to wait after the transaction, default is 120s')
 parser.add_argument('--value', type=int,
                     help='money amount to use in transaction')
+parser.add_argument('-V', '--version', action='store_true',
+                    help='show version and exit')
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('-v', '--verbose', action='count',
@@ -75,12 +79,17 @@ def getLogger(defaultLevel):
 log = getLogger(logging.INFO)
 
 
-def command(func):
-    dispatch[func.__name__] = func
-    return func
+def command(*names):
+    def decorator(func):
+        for n in names:
+            dispatch[n] = func
+        function_names[names[0]] = names
+        return func
+    return decorator
 
 
 dispatch = {}
+function_names = {}
 
 
 def getJson(fname):
@@ -109,7 +118,11 @@ class Dymka:
                 password = args.password.read() if args.password else ''
                 with open(args.from_account) as keyfile:
                     encrypted_key = keyfile.read()
-                    self.privKey = self.w3.eth.account.decrypt(encrypted_key, password)
+                    try:
+                        self.privKey = self.w3.eth.account.decrypt(encrypted_key, password)
+                    except ValueError:
+                        password = getpass.getpass()
+                        self.privKey = self.w3.eth.account.decrypt(encrypted_key, password)
             else:
                 self.privKey = args.from_account
         if self.privKey:
@@ -119,7 +132,7 @@ class Dymka:
                 log.debug(f'Using address {args.from_account}.')
                 self.address_from = args.from_account
 
-    @command
+    @command('show', 'config')
     def show(self):
         """Shows configuration used."""
         status = {'provider': args.provider}
@@ -127,10 +140,15 @@ class Dymka:
             status['address'] = self.address_from
         return status
 
-    @command
+    @command('gas', 'gasprice')
     def gas(self):
         """Returns current gas price."""
         return {'gasPrice': self.w3.eth.gasPrice}
+
+    @command('private', 'priv')
+    def private(self):
+        """Returns private key of the 'from' account."""
+        return {'address': self.address_from, 'private_key': self.privKey}
 
     @staticmethod
     def processAccounts(fn, *vargs):
@@ -138,28 +156,28 @@ class Dymka:
         return list(map(lambda a: a and {'account': a, 'result': fn(a)},
                         [*args.arguments, *filter(None, vargs)]))
 
-    @command
+    @command('checksum', 'cs')
     def checksum(self):
         """Calculate address string representation with correct web3 checksum."""
         return self.processAccounts(Web3.toChecksumAddress, self.address_from, args.to)
 
-    @command
+    @command('balance', 'bal')
     def balance(self):
         """Returns balance of all provided arguments and --from account."""
         return self.processAccounts(self.w3.eth.getBalance, self.address_from, args.to)
 
-    @command
+    @command('nonce')
     def nonce(self):
         """Returns nonce for all provided arguments and --from account."""
         return self.processAccounts(self.w3.eth.getTransactionCount,
                                     self.address_from, args.to)
 
-    @command
-    def exec(self):
+    @command('execute', 'exec', 'exe')
+    def execute(self):
         """Executes given JSON-RPC command."""
         return self.provider.make_request(args.arguments[0], *[getOptionalArguments(1)])
 
-    @command
+    @command('transaction', 'tx')
     def transaction(self):
         """Returns transaction with the given hash."""
         hash = args.arguments[0]
@@ -230,12 +248,12 @@ class Dymka:
             receipt['logs'] = logs
         return receipt
 
-    @command
+    @command('receipt')
     def receipt(self):
         """Returns transaction receipt with the given hash."""
         return self.getTxReceipt(args.arguments[0])
 
-    @command
+    @command('call', 'query')
     def call(self):
         """
         Call the specified contract function with the specified parameters, if
@@ -285,7 +303,7 @@ class Dymka:
         status['receipt'] = self.getTxReceipt(hash)
         return status
 
-    @command
+    @command('deploy')
     def deploy(self):
         """
         Deploy the given contract. Pass arguments to its constructor, if
@@ -310,7 +328,7 @@ class Dymka:
         func_bound = func(*getOptionalArguments(1))
         return func_bound.buildTransaction(opts)
 
-    @command
+    @command('send')
     def send(self):
         """
         Invoke the specified function for the specified contract. Pass arguments,
@@ -331,18 +349,20 @@ class EthereumEncoder(json.JSONEncoder):
 
 
 if __name__ == "__main__":
-    if args.command == 'version':
-        print('Version: 1.0.4')
+    if args.version or args.command == 'version':
+        print('Version: 1.0.5')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
-            print(dispatch[args.arguments[0]].__doc__)
+            print(dispatch[args.arguments[0].lower()].__doc__)
         else:
-            print(f'Specify a command for help: {list(dispatch.keys())}.')
+            print('Specify a command for help:');
+            for name in function_names.keys():
+                print('\t' + ', '.join(function_names[name]))
         exit(0)
     try:
         d = Dymka()
-        result = dispatch[args.command](d)
+        result = dispatch[args.command.lower()](d)
         print(json.dumps(result, cls=EthereumEncoder, indent=4))
     except Exception as e:
         if args.verbose and args.verbose > 1:
