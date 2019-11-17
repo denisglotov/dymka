@@ -265,15 +265,15 @@ Why should I trust dymka
 ------------------------
 
 Dymka source code is open and kept reasonably small for review, it resides in
-a single file [dymka] for simplicity. The only [dependency] is a [Web3 python
-library] that actually does all actions. Dymka actually is a thin command-line
+a single file [dymka] for simplicity. The only runtime [dependency] is a [Web3
+python library] that does all actions. Dymka actually is a thin command-line
 wrapper over it. Dymka can be used with no Internet access, it only needs to
 access its web3 provider (gateway node). No telemetry or other requests are
 ever made.
 
 
-[dymka]: ./dymka
-[dependency]: ./Pipfile
+[dymka]: https://web3py.readthedocs.io/
+[dependency]: https://github.com/denisglotov/dymka/blob/dev/Pipfile
 [Web3 python library]: https://web3py.readthedocs.io/
 
 
