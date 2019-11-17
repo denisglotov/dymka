@@ -53,34 +53,36 @@ account.
 Raw RPC requests
 ----------------
 
-    $ dymka exec web3_clientVersion
-    {
-        "id": 0,
-        "jsonrpc": "2.0",
-        "result": "EthereumJS TestRPC/v2.8.0/ethereum-js"
-    }
+``` shell
+$ dymka exec web3_clientVersion
+{
+    "id": 0,
+    "jsonrpc": "2.0",
+    "result": "EthereumJS TestRPC/v2.8.0/ethereum-js"
+}
 
-    $ dymka exec rpc_modules
-    {
-        "id": 0,
-        "jsonrpc": "2.0",
-        "result": {
-            "eth": "1.0",
-            "net": "1.0",
-            "rpc": "1.0",
-            "web3": "1.0",
-            "evm": "1.0",
-            "personal": "1.0"
-        }
+$ dymka exec rpc_modules
+{
+    "id": 0,
+    "jsonrpc": "2.0",
+    "result": {
+        "eth": "1.0",
+        "net": "1.0",
+        "rpc": "1.0",
+        "web3": "1.0",
+        "evm": "1.0",
+        "personal": "1.0"
     }
+}
 
-    $ dymka exec web3_sha3 "'0x68656c6c6f20776f726c64'"
-    $ dymka exec web3_sha3 "'hello world'"
-    {
-        "id": 0,
-        "jsonrpc": "2.0",
-        "result": "0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad"
-    }
+$ dymka exec web3_sha3 "'0x68656c6c6f20776f726c64'"
+$ dymka exec web3_sha3 "'hello world'"
+{
+    "id": 0,
+    "jsonrpc": "2.0",
+    "result": "0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad"
+}
+```
 
 See [note about arguments] below for why we need double quotes here.
 
@@ -94,29 +96,32 @@ See ethereum wiki [JSON-RPC] and [Management APIs] for more details.
 Balance and nonce of accounts
 -----------------------------
 
-    $ dymka balance 0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5
-    [
-        {
-            "account": "0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5",
-            "result": 99945104760000000000
-        }
-    ]
+``` shell
+$ dymka balance 0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5
+[
+    {
+        "account": "0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5",
+        "result": 99945104760000000000
+    }
+]
 
-    $ dymka nonce 0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5
-    [
-        {
-            "account": "0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5",
-            "result": 40
-        }
-    ]
-
+$ dymka nonce 0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5
+[
+    {
+        "account": "0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5",
+        "result": 40
+    }
+]
+```
 
 Send money
 ----------
 
-    dymka send --to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055 \
-               --value 1000000000000000000 \
-               --gasPrice 1000000000 -e
+``` shell
+dymka send --to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055 \
+           --value 1000000000000000000 \
+           --gasPrice 1000000000 -e
+```
 
 Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you
 can specify `--gas 21000`.
@@ -127,7 +132,9 @@ Compile contract
 
 There is [Demo] contract, compile it like the following so we get `demo.json`.
 
-    solc --combined-json abi,bin --optimize demo.sol >demo.json
+``` shell
+solc --combined-json abi,bin --optimize demo.sol >demo.json
+```
 
 [Demo]: https://github.com/denisglotov/dymka/blob/master/tests/demo.sol
 
@@ -135,19 +142,24 @@ There is [Demo] contract, compile it like the following so we get `demo.json`.
 Deploy contract
 ---------------
 
-    $ dymka -c demo deploy
-    {
-        "hash": "0xe4a8eeb6dc8a21e430077d460d2618c6a0a380e71dfecadcf4ceb252bae729b3",
-        "receipt": {...
-            "contractAddress": "0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A",
-            ...}
-    }
+``` shell
+$ dymka -c demo deploy
+{
+    "hash": "0xe4a8eeb6dc8a21e430077d460d2618c6a0a380e71dfecadcf4ceb252bae729b3",
+    "receipt": {...
+        "contractAddress": "0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A",
+    ...}
+}
+```
 
 If you need to send money to the contract being deployed, use `--value`.
 
 For convenience, export the address as environment variable as following.
 
-    export WEB3_CONTRACT_DEMO=0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A
+``` shell
+export WEB3_CONTRACT_DEMO=0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A
+
+```
 
 Alternatively, you may specify the address every time you want to call/send to
 the contract with `-a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A`.
@@ -156,25 +168,29 @@ the contract with `-a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A`.
 Call contract
 -------------
 
-    $ dymka -c demo call value
-    {
-        "result": 42
-    }
+``` shell
+$ dymka -c demo call value
+{
+    "result": 42
+}
 
-    $ dymka -c demo call compare 45
-    {
-        "result": [
-            false,
-            true
-        ]
-    }
+$ dymka -c demo call compare 45
+{
+    "result": [
+        false,
+        true
+    ]
+}
 
+```
 
 Invoke contract
 ---------------
 
-    dymka -c demo send set 42 100
-    dymka -c demo send act
+``` shell
+dymka -c demo send set 42 100
+dymka -c demo send act
+```
 
 If you need to send money to the contract, use `--value`.
 
@@ -207,7 +223,9 @@ Note about arguments
 Arguments for deploy, call and send contracts are first evaluated with python
 (`eval()`). Thus addresses should be quoted twice like the following.
 
-    $ dymka -c demo send teardown "\"0x0000000000000000000000000000000000000000\""
+``` shell
+$ dymka -c demo send teardown "\"0x0000000000000000000000000000000000000000\""
+```
 
 The outer quotes are consumed by your shell (e.g. bash) and the inner
 (escaped) quotes are consumed by python to make sure your address is not
@@ -241,6 +259,22 @@ python3 setup.py sdist bdist_wheel
 python3 -m twine upload dist/*
 ```
 Taken from https://packaging.python.org/tutorials/packaging-projects/.
+
+
+Why should I trust dymka
+------------------------
+
+Dymka source code is open and kept reasonably small for review, it resides in
+a single file [dymka] for simplicity. The only [dependency] is a [Web3 python
+library] that actually does all actions. Dymka actually is a thin command-line
+wrapper over it. Dymka can be used with no Internet access, it only needs to
+access its web3 provider (gateway node). No telemetry or other requests are
+ever made.
+
+
+[dymka]: ./dymka
+[dependency]: ./Pipfile
+[Web3 python library]: https://web3py.readthedocs.io/
 
 
 Donate
