@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from web3 import Web3, HTTPProvider, datastructures, exceptions
+from web3 import Web3, HTTPProvider, WebsocketProvider, IPCProvider, datastructures, exceptions
 from hexbytes import HexBytes
 import argparse
 import json
@@ -109,7 +109,12 @@ def getOptionalArguments(ord):
 class Dymka:
     def __init__(self):
         log.info('Using %s to connect web3...', args.provider)
-        self.provider = HTTPProvider(args.provider)
+        if args.provider.startswith('ws'):
+            self.provider = WebsocketProvider(args.provider)
+        elif args.provider.startswith('ipc'):
+            self.provider = IPCProvider(args.provider)
+        else:
+            self.provider = HTTPProvider(args.provider)
         self.w3 = Web3(self.provider)
         self.privKey = None
         self.address_from = None
@@ -183,6 +188,13 @@ class Dymka:
         hash = args.arguments[0]
         tx = self.w3.eth.getTransaction(hash)
         return dict(tx)
+
+    @command('block', 'bl')
+    def block(self):
+        """Returns current block number or specified block content."""
+        if args.arguments:
+            return self.w3.eth.getBlock(getOptionalArguments(0)[0])
+        return self.w3.eth.blockNumber
 
     @staticmethod
     def getContractAddressEnv(name):
@@ -350,7 +362,7 @@ class EthereumEncoder(json.JSONEncoder):
 
 if __name__ == "__main__":
     if args.version or args.command == 'version':
-        print('Version: 1.0.5')
+        print('Version: 1.0.6')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
