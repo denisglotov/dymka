@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from web3 import Web3, HTTPProvider, WebsocketProvider, IPCProvider, datastructures, exceptions
+from web3.middleware import geth_poa_middleware
 from hexbytes import HexBytes
 import argparse
 import json
@@ -47,6 +48,8 @@ parser.add_argument('--value', type=int,
                     help='money amount to use in transaction')
 parser.add_argument('-V', '--version', action='store_true',
                     help='show version and exit')
+parser.add_argument('--poa', action='store_true',
+                    help='activate web3 middleware for POA networks')
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('-v', '--verbose', action='count',
@@ -116,6 +119,9 @@ class Dymka:
         else:
             self.provider = HTTPProvider(args.provider)
         self.w3 = Web3(self.provider)
+        if args.poa:
+            # inject the poa compatibility middleware to the innermost layer
+            self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
         self.privKey = None
         self.address_from = None
         if args.from_account:
@@ -134,8 +140,9 @@ class Dymka:
             try:
                 self.address_from = self.w3.eth.account.from_key(self.privKey).address
             except ValueError:
-                log.debug(f'Using address {args.from_account}.')
+                log.info(f'Using from address {args.from_account}, no private key.')
                 self.address_from = args.from_account
+                self.privKey = None
 
     @command('show', 'config')
     def show(self):
@@ -204,6 +211,7 @@ class Dymka:
     def getContractAddress(cls):
         """Discovers contract address from --address or --contract arguments."""
         if args.address:
+            log.debug(f'Using contract at {args.address}.')
             return args.address
         if args.contract:
             envname = cls.getContractAddressEnv(args.contract)
@@ -217,8 +225,9 @@ class Dymka:
                          'is set.')
 
     def getContract(self, **kwargs):
-        """Returns contract object discovered from --contract and --contractJson
-        arguments.
+        """
+        Returns contract object discovered from --contract and --contractJson
+        arguments and guess what format the given json is.
 
         """
         fname = args.contractJson
@@ -227,9 +236,28 @@ class Dymka:
             if not os.path.isfile(fname):
                 fname = args.contract
         data = getJson(fname)
+
+        # First guess, data is a list - it is ABI.
         if isinstance(data, list):
             log.debug(f'Using contract ABI from {fname}.')
             return self.w3.eth.contract(abi=data, **kwargs)
+
+        # Second guess, data has 'contractName', 'abi' and possibly 'bytecode' keys.
+        if 'abi' in data:
+            log.debug(f'Using simple-json contract from {fname}.')
+            if 'contractName' in data:
+                contract_name = data['contractName']
+                if args.contract and args.contract != contract_name:
+                    raise ValueError(f'Contract name "{contract_name}" does not match '
+                                     f'to "{args.contract}" that you specified.')
+            if 'bytecode' in data:
+                return self.w3.eth.contract(abi=data['abi'],
+                                            bytecode=data['bytecode'],
+                                            **kwargs)
+            return self.w3.eth.contract(abi=data['abi'], **kwargs)
+
+        # Last guess, this is "combined-json" solc format.
+        log.debug(f'Using combined-json from {fname}.')
         contracts_section = data['contracts']
         contracts = [key for key in contracts_section.keys()
                      if key.lower().endswith(args.contract.lower())]
@@ -285,10 +313,11 @@ class Dymka:
 
     def getOpts(self):
         """Prepare options for making a transaction."""
-        opts = {
-            'from': self.address_from,
-            'nonce': args.nonce or self.w3.eth.getTransactionCount(self.address_from)
-        }
+        opts = {}
+        if self.address_from:
+            opts['from'] = self.address_from
+        if args.nonce or self.address_from:
+            opts['nonce']: args.nonce or self.w3.eth.getTransactionCount(self.address_from)
         for name in ['chainId', 'gas', 'gasPrice', 'value', 'to']:
             if vars(args)[name]:
                 opts[name] = vars(args)[name]
@@ -304,8 +333,12 @@ class Dymka:
         if args.dry:
             log.info('Dry run requested, nothing more to do')
             return status
-        signed = self.w3.eth.account.sign_transaction(tx, private_key=self.privKey)
-        hash = self.w3.eth.sendRawTransaction(signed.rawTransaction)
+        hash = ''
+        if self.privKey:
+            signed = self.w3.eth.account.sign_transaction(tx, private_key=self.privKey)
+            hash = self.w3.eth.sendRawTransaction(signed.rawTransaction)
+        else:
+            hash = self.w3.eth.sendTransaction(tx)
         status['hash'] = hash.hex()
         log.info('Transaction hash: %s', hash.hex())
         try:
@@ -362,7 +395,7 @@ class EthereumEncoder(json.JSONEncoder):
 
 if __name__ == "__main__":
     if args.version or args.command == 'version':
-        print('Version: 1.0.6')
+        print('Version: 1.0.7')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
