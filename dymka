@@ -317,7 +317,7 @@ class Dymka:
         if self.address_from:
             opts['from'] = self.address_from
         if args.nonce or self.address_from:
-            opts['nonce']: args.nonce or self.w3.eth.getTransactionCount(self.address_from)
+            opts['nonce'] = args.nonce or self.w3.eth.getTransactionCount(self.address_from)
         for name in ['chainId', 'gas', 'gasPrice', 'value', 'to']:
             if vars(args)[name]:
                 opts[name] = vars(args)[name]

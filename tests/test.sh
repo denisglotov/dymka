@@ -14,12 +14,12 @@ dymka balance
 
 echo
 echo "Deploy Demo contract."
-ADDR=$(dymka -c demo deploy | jq -r ".receipt.contractAddress")
+ADDR=$(dymka -c demo deploy | tee /dev/tty | jq -r ".receipt.contractAddress")
 export WEB3_CONTRACT_DEMO="$ADDR"
 
 echo
 echo "Call its value() function."
-RES=$(dymka -c demo call value | jq -r ".result")
+RES=$(dymka -c demo call value | tee /dev/tty | jq -r ".result")
 [ "$RES" == "42" ] || die "Wrong initial value $RES"
 
 echo
@@ -28,12 +28,12 @@ dymka -c demo send act
 
 echo
 echo "Call value() function again. Must be 43."
-RES=$(dymka -c demo call value | jq -r ".result")
+RES=$(dymka -c demo call value | tee /dev/tty | jq -r ".result")
 [ "$RES" == "43" ] || die "Wrong value $RES"
 
 echo
 echo "Call compare(45) function."
-RES=$(dymka -c demo call compare 45 | jq -r ".result")
+RES=$(dymka -c demo call compare 45 | tee /dev/tty | jq -r ".result")
 [ $(echo "$RES" | tr -d '[:space:]') == "[false,true]" ] || die "Wrong $RES"
 
 echo
