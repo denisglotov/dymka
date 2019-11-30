@@ -136,6 +136,14 @@ There is [Demo] contract, compile it like the following so we get `demo.json`.
 solc --combined-json abi,bin --optimize demo.sol >demo.json
 ```
 
+or with docker image
+
+``` shell
+cd tests
+docker run --rm -v $PWD:/src:ro ethereum/solc:0.5.9 \
+    /src/demo.sol --combined-json abi,bin --optimize >demo.json
+```
+
 [Demo]: https://github.com/denisglotov/dymka/blob/master/tests/demo.sol
 
 
