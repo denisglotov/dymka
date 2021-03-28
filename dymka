@@ -184,6 +184,21 @@ class Dymka:
         return self.processAccounts(self.w3.eth.getTransactionCount,
                                     self.address_from, args.to)
 
+    @command('chain', 'chain_id', 'id')
+    def chain(self):
+        """Returns chain id of the given network."""
+        return self.w3.eth.chain_id
+
+    @command('accounts', 'account', 'acc')
+    def accounts(self):
+        """List available accounts."""
+        return self.w3.eth.accounts
+
+    @command('keccak')
+    def keccak(self):
+        """Calculate Keccak-256 of the given string argument."""
+        return Web3.keccak(text=args.arguments[0])
+
     @command('execute', 'exec', 'exe')
     def execute(self):
         """Executes given JSON-RPC command."""
@@ -395,7 +410,7 @@ class EthereumEncoder(json.JSONEncoder):
 
 if __name__ == "__main__":
     if args.version or args.command == 'version':
-        print('Version: 1.0.7')
+        print('Version: 1.0.8')
         exit(0)
     elif args.command == 'help':
         if args.arguments:

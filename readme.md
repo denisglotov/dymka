@@ -123,8 +123,8 @@ dymka send --to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055 \
            --gasPrice 1000000000 -e
 ```
 
-Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you
-can specify `--gas 21000`.
+:notes: Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively
+you can specify `--gas 21000`.
 
 
 Compile contract
@@ -218,11 +218,17 @@ Displays gas price of the current provider
 Other commands
 --------------
 
+* `accounts` - kist available accounts,
 * `checksum` - calculate correct checksummed string for the given address,
 * `show` - display used provider and from address,
 * `transaction` - show transaction details for the given hash,
-* `receipt` - show receipt for the given hash.
+* `receipt` - show receipt for the given hash,
+* `keccak` - calculate Keccak-256 of the given string argument,
+* `chain` - return an integer value for the currently configured “Chain Id”
+  value introduced in [EIP-155] (delegates to `eth_chainId` RPC Method),
 * `help` - shows full list of commands and short command description.
+
+[EIP-155]: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
 
 
 Note about arguments
@@ -257,6 +263,12 @@ To set up virtual environment
 
 ``` shell
 PIPENV_VENV_IN_PROJECT=1 pipenv install --dev
+```
+
+To run it from there
+
+``` shell
+pipenv run ./dymka -V
 ```
 
 To publish the new version to pypi
