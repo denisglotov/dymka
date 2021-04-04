@@ -111,7 +111,7 @@ def getOptionalArguments(ord):
 
 class Dymka:
     def __init__(self):
-        log.info('Using %s to connect web3...', args.provider)
+        log.info(f'Using {args.provider} to connect web3...')
         if args.provider.startswith('ws'):
             self.provider = WebsocketProvider(args.provider)
         elif args.provider.startswith('ipc'):
@@ -443,11 +443,11 @@ class EthereumEncoder(json.JSONEncoder):
 
 
 if __name__ == "__main__":
-    if not args.command:
+    if not args.command and not args.version:
         print('Please specify a command or "help".')
         exit(0)
     elif args.version or args.command == 'version':
-        print('Version: 1.0.9')
+        print(f'Version: 1.0.9, Web3: {str(Web3().api)}.')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
