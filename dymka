@@ -331,7 +331,7 @@ class Dymka:
                 fromBlock = int(range[0])
             else:
                 toBlock = self.w3.eth.blockNumber
-                fromBlock = int(range[1])
+                fromBlock = toBlock - int(range[1])
         else:
             toBlock = self.w3.eth.blockNumber
             fromBlock = toBlock - 1000
