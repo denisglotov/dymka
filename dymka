@@ -323,8 +323,11 @@ class Dymka:
         """
         if args.arguments:
             range = args.arguments[0].split('-')
-            if len(range) == 2 and range[0]:
-                toBlock = int(range[1])
+            if len(range) == 1:
+                toBlock = int(range[0])
+                fromBlock = int(range[0])
+            elif len(range) == 2 and range[0]:
+                toBlock = int(range[1]) if range[1] else self.w3.eth.blockNumber
                 fromBlock = int(range[0])
             else:
                 toBlock = self.w3.eth.blockNumber

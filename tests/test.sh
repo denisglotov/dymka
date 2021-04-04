@@ -7,6 +7,7 @@ die() {
 }
 
 dymka version
+dymka block
 dymka accounts
 dymka balance
 
@@ -46,7 +47,8 @@ echo "Call value() function (with abi only). Must be 100."
 RES=$(dymka -j demo.abi.json -c demo call value | jq -r ".result")
 [ "$RES" == "100" ] || die "Wrong value $RES"
 
-dymka -j demo.abi.json -c demo events
+LOGS=$(dymka -j demo.abi.json -c demo events 1- | tee /dev/tty)
+[ $(echo "$LOGS" | jq .[0].event) == "Acted" ] || die "Wrong 1st log"
 
 echo
 echo "Invoke its teardown() function."
