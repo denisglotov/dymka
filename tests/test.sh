@@ -48,7 +48,8 @@ RES=$(dymka -j demo.abi.json -c demo call value | jq -r ".result")
 [ "$RES" == "100" ] || die "Wrong value $RES"
 
 LOGS=$(dymka -j demo.abi.json -c demo events 1- | tee /dev/tty)
-[ $(echo "$LOGS" | jq .[0].event) == "Acted" ] || die "Wrong 1st log"
+[ $(echo "$LOGS" | jq -r .[0].event) == "Acted" ] || die "Wrong 1st log name"
+[ $(echo "$LOGS" | jq -r .[0].args.who) == "$WEB3_FROM" ] || die "Wrong 1st log arg"
 
 echo
 echo "Invoke its teardown() function."
