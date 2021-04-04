@@ -47,7 +47,7 @@ echo "Call value() function (with abi only). Must be 100."
 RES=$(dymka -j demo.abi.json -c demo call value | jq -r ".result")
 [ "$RES" == "100" ] || die "Wrong value $RES"
 
-set +x
+#set +x
 LOGS=$(dymka -j demo.abi.json -c demo events 1- | tee /dev/tty)
 [ $(echo "$LOGS" | jq -r .[0].event) == "Acted" ] || die "Wrong 1st log name"
 [ $(echo "$LOGS" | jq -r .[0].args.who) == "0xB18aE0D7F12105e36a430523721622e5930879cC" ] || die "Wrong 1st log arg"
