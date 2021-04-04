@@ -220,7 +220,7 @@ Gas price
 ---------
 
 Displays gas price of the current provider
-([web3.eth.gasPrice](https://web3js.readthedocs.io/en/v1.2.0/web3-eth.html#getgasprice)).
+([web3.eth.gasPrice](https://web3py.readthedocs.io/en/stable/web3.eth.html?highlight=gasPrice#web3.eth.Eth.gas_price)).
 
     $ dymka gas
     {
