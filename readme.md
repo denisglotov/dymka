@@ -86,17 +86,22 @@ $ dymka exec web3_sha3 "'hello world'"
 
 See [note about arguments] below for why we need double quotes here.
 
-See ethereum wiki [JSON-RPC] and [Management APIs] for more details.
+See Ethereum wiki [JSON-RPC] and [Management APIs] for more details.
 
 [note about arguments]: #note-about-arguments
 [JSON-RPC]: https://github.com/ethereum/wiki/wiki/JSON-RPC
 [Management APIs]: https://github.com/ethereum/go-ethereum/wiki/Management-APIs
 
 
-Balance and nonce of accounts
------------------------------
+Accounts, Balance and nonce
+---------------------------
 
 ``` shell
+$ dymka accounts
+[
+    "0xB18aE0D7F12105e36a430523721622e5930879cC"
+]
+
 $ dymka balance 0xD6F0d25305cD6F53829aF54945d6FDEC370e20a5
 [
     {
@@ -203,6 +208,14 @@ dymka -c demo send act
 If you need to send money to the contract, use `--value`.
 
 
+Events
+------
+
+To list the events of the contract for blocks from 1 till 3:
+``` shell
+$ dymka -a 0xbABA05e6c21551bb50caF7C684a1Fc9B57B02A9A -j demo.abi.json events 1-3
+```
+
 Gas price
 ---------
 
@@ -218,7 +231,7 @@ Displays gas price of the current provider
 Other commands
 --------------
 
-* `accounts` - kist available accounts,
+* `accounts` - list available accounts,
 * `checksum` - calculate correct checksummed string for the given address,
 * `show` - display used provider and from address,
 * `transaction` - show transaction details for the given hash,
