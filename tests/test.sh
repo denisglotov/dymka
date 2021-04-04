@@ -7,6 +7,7 @@ die() {
 }
 
 dymka version
+dymka accounts
 dymka balance
 
 # From account must be set by travis beforehand.
@@ -44,6 +45,8 @@ echo
 echo "Call value() function (with abi only). Must be 100."
 RES=$(dymka -j demo.abi.json -c demo call value | jq -r ".result")
 [ "$RES" == "100" ] || die "Wrong value $RES"
+
+dymka -j demo.abi.json -c demo events
 
 echo
 echo "Invoke its teardown() function."
