@@ -20,7 +20,7 @@ parser.add_argument('-a', '--address',
                     help='contract address to send/call, defaults to env '
                     'WEB3_CONTRACT_{CONTRACT_NAME}')
 parser.add_argument('-c', '--contract',
-                    help='contract name or its json path')
+                    help='contract name or its json/abi path')
 parser.add_argument('-d', '--dry', action='store_true',
                     help='dry run, do not transact')
 parser.add_argument('-f', '--from', dest='from_account',
@@ -28,7 +28,7 @@ parser.add_argument('-f', '--from', dest='from_account',
                     help='account keystore filename, raw private key or account address, '
                     'defaults to env WEB3_FROM')
 parser.add_argument('-j', '--contractJson',
-                    help='contract json path if different from contract name')
+                    help='contract json/abi path if different from contract name')
 parser.add_argument('-p', '--provider',
                     default=os.environ.get('WEB3_PROVIDER', 'http://localhost:8545'),
                     help='web3 provider, defaults to env WEB3_PROVIDER or localhost:8545')
@@ -59,9 +59,9 @@ group.add_argument('-q', '--quiet', action='count',
 
 group = parser.add_mutually_exclusive_group()
 group.add_argument('-e', '--estimate', '--estimateGas', action='store_true',
-                    help='estimate gas for the tx and use it unless dry run')
+                   help='estimate gas for the tx and use it unless dry run')
 group.add_argument('--gas', type=int,
-                    help='explicitly set gas amount')
+                   help='explicitly set gas amount')
 
 args = parser.parse_args()
 
@@ -194,7 +194,7 @@ class Dymka:
         """List available accounts."""
         return self.w3.eth.accounts
 
-    @command('keccak')
+    @command('keccak', 'keccak256')
     def keccak(self):
         """Calculate Keccak-256 of the given string argument."""
         return Web3.keccak(text=args.arguments[0])
@@ -284,29 +284,51 @@ class Dymka:
                                     bytecode=contract['bin'],
                                     **kwargs)
 
+    def processLogs(self, raw_logs):
+        """Process given raw logs using contract ABI."""
+        if not args.contract and not args.contractJson:
+            log.warning('Unable to parse contract events, '
+                        'specify --contract or --contractJson for detailed events.')
+            return raw_logs
+        contract = self.getContract()
+        logs = []
+        for event in raw_logs:
+            processed = False
+            for evt in contract.events:
+                try:
+                    logs.append(contract.events[evt.event_name]().processLog(event))
+                    processed = True
+                    break
+                except exceptions.MismatchedABI:
+                    pass
+            if not processed:
+                logs.append(event)
+        return logs
+
     def getTxReceipt(self, hash):
         receipt = dict(self.w3.eth.getTransactionReceipt(hash))
-        if args.contract:
-            contract = self.getContract()
-            logs = []
-            for log in receipt['logs']:
-                processed = False
-                for evt in contract.events:
-                    try:
-                        logs.append(contract.events[evt.event_name]().processLog(log))
-                        processed = True
-                        break
-                    except exceptions.MismatchedABI:
-                        pass
-                if not processed:
-                    logs.append(log)
-            receipt['logs'] = logs
+        receipt['logs'] = self.processLogs(receipt['logs'])
         return receipt
 
     @command('receipt')
     def receipt(self):
         """Returns transaction receipt with the given hash."""
         return self.getTxReceipt(args.arguments[0])
+
+    @command('events', 'logs', 'log')
+    def events(self):
+        """
+        Returns emitted events of the given contract for the specified block
+        range (last 1000 blocks by default)
+        """
+        toBlock = self.w3.eth.blockNumber
+        fromBlock = toBlock - 1000
+        log.info(f'Requesting logs in range from {fromBlock} to {toBlock}...')
+        return self.processLogs(
+            self.w3.eth.getLogs({
+                'address': self.getContractAddress(),
+                'fromBlock': fromBlock,
+                'toBlock': toBlock}))
 
     @command('call', 'query')
     def call(self):
@@ -323,7 +345,7 @@ class Dymka:
         from_account = self.address_from
         if not from_account:
             from_account = '0x0000000000000000000000000000000000000000'
-            log.warn(f'From account not specified, using {from_account}.')
+            log.warning(f'From account not specified, using {from_account}.')
         return {'result': tx.call({'from': from_account})}
 
     def getOpts(self):
@@ -409,14 +431,17 @@ class EthereumEncoder(json.JSONEncoder):
 
 
 if __name__ == "__main__":
-    if args.version or args.command == 'version':
-        print('Version: 1.0.8')
+    if not args.command:
+        print('Please specify a command or "help".')
+        exit(0)
+    elif args.version or args.command == 'version':
+        print('Version: 1.0.9')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
             print(dispatch[args.arguments[0].lower()].__doc__)
         else:
-            print('Specify a command for help:');
+            print('Specify a command for help:')
             for name in function_names.keys():
                 print('\t' + ', '.join(function_names[name]))
         exit(0)

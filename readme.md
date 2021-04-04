@@ -123,8 +123,8 @@ dymka send --to 0xb92FbF90bFAC4a34557bbA17b91204C8D36a5055 \
            --gasPrice 1000000000 -e
 ```
 
-:notes: Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively
-you can specify `--gas 21000`.
+Note that `-e` or `--estimate` stands for 'estimate gas'. Alternatively you can
+specify `--gas 21000`.
 
 
 Compile contract
