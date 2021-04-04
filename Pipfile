@@ -10,4 +10,3 @@ setuptools = "*"
 
 [packages]
 web3 = "*"
-
