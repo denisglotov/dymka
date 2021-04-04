@@ -321,8 +321,17 @@ class Dymka:
         Returns emitted events of the given contract for the specified block
         range (last 1000 blocks by default)
         """
-        toBlock = self.w3.eth.blockNumber
-        fromBlock = toBlock - 1000
+        if args.arguments:
+            range = args.arguments[0].split('-')
+            if len(range) == 2 and range[0]:
+                toBlock = int(range[1])
+                fromBlock = int(range[0])
+            else:
+                toBlock = self.w3.eth.blockNumber
+                fromBlock = int(range[1])
+        else:
+            toBlock = self.w3.eth.blockNumber
+            fromBlock = toBlock - 1000
         log.info(f'Requesting logs in range from {fromBlock} to {toBlock}...')
         return self.processLogs(
             self.w3.eth.getLogs({
