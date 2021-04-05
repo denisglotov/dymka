@@ -435,7 +435,7 @@ class Dymka:
 
 class EthereumEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, HexBytes):
+        if isinstance(obj, HexBytes) or isinstance(obj, bytes):
             return obj.hex()
         elif isinstance(obj, datastructures.AttributeDict):
             return dict(obj)
