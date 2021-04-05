@@ -447,7 +447,7 @@ if __name__ == "__main__":
         print('Please specify a command or "help".')
         exit(0)
     elif args.version or args.command == 'version':
-        print(f'Version: 1.0.9, Web3: {str(Web3().api)}.')
+        print(f'Version: 1.1.0, Web3: {str(Web3().api)}.')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
