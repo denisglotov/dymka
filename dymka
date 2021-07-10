@@ -19,6 +19,8 @@ parser.add_argument('arguments', nargs='*',
 parser.add_argument('-a', '--address',
                     help='contract address to send/call, defaults to env '
                     'WEB3_CONTRACT_{CONTRACT_NAME}')
+parser.add_argument('-b', '--block',
+                    help='defaultBlock parameter: block number or "earliest|latest|pending"')
 parser.add_argument('-c', '--contract',
                     help='contract name or its json/abi path')
 parser.add_argument('-d', '--dry', action='store_true',
@@ -176,7 +178,7 @@ class Dymka:
     @command('balance', 'bal')
     def balance(self):
         """Returns balance of all provided arguments and --from account."""
-        return self.processAccounts(self.w3.eth.getBalance, self.address_from, args.to)
+        return self.processAccounts(lambda addr: self.w3.eth.get_balance(addr, *opts), self.address_from, args.to)
 
     @command('nonce')
     def nonce(self):
@@ -283,6 +285,14 @@ class Dymka:
         return self.w3.eth.contract(abi=contract['abi'],
                                     bytecode=contract['bin'],
                                     **kwargs)
+
+    @command('selector', 'sel')
+    def functions(self):
+        """Returns contract's function by given selector"""
+        contract = self.getContract()
+        if args.arguments:
+            return str(contract.get_function_by_selector(args.arguments[0]))
+        return list(map(lambda fn: str(fn), contract.all_functions()))
 
     def processLogs(self, raw_logs):
         """Process given raw logs using contract ABI."""
@@ -447,7 +457,7 @@ if __name__ == "__main__":
         print('Please specify a command or "help".')
         exit(0)
     elif args.version or args.command == 'version':
-        print(f'Version: 1.1.1, Web3.py: {str(Web3().api)}.')
+        print(f'Version: 1.1.2, Web3.py: {str(Web3().api)}.')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
