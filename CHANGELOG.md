@@ -50,7 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Keccak256 computation.
 
 
-# [1.0.7] - 2019-11-30
+## [1.0.7] - 2019-11-30
 
 - Added POA compatibility.
 - Simple json format.
