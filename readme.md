@@ -23,13 +23,12 @@ Unless your web3 provider is 'http://localhost:8545', you can use the
 `--provider` and specify it every time you run the tool. Or you may create a
 file `myprovider` with the following content:
 
-    --provider
-    https://rinkeby.infura.io/v3/...
+    --provider https://eth.llamarpc.com
 
 and run the tool with it: `dymka @myprovider exec eth_blockNumber`. Or you may
 use environment variable like the following:
 
-    export WEB3_PROVIDER=https://rinkeby.infura.io/v3/...
+    export WEB3_PROVIDER=https://eth.llamarpc.com
 
 To specify the account that you use to transact from, use `--from` to specify
 account keystore file (and `--password` to specify the file with its pass
@@ -37,10 +36,7 @@ phrase) or specify a private key.
 
 Similarly to above, you can put this to a file, say `myaccount`:
 
-    --from
-    account.json
-    --password
-    account.password.txt
+    --from account.json --password account.password.txt
 
 and run the tool with it: `dymka @myprovider @myaccount balance`. Or just
 
@@ -83,6 +79,8 @@ $ dymka exec web3_sha3 "'hello world'"
     "result": "0x47173285a8d7341e5e972fc677286384f802f8ef42a5ec5f03bbfa254cb01fad"
 }
 ```
+
+(or alrernatively use `dymka keccak256 'hello world'`)
 
 See [note about arguments] below for why we need double quotes here.
 
@@ -222,11 +220,12 @@ Gas price
 Displays gas price of the current provider
 ([web3.eth.gasPrice](https://web3py.readthedocs.io/en/stable/web3.eth.html?highlight=gasPrice#web3.eth.Eth.gas_price)).
 
-    $ dymka gas
-    {
-        "gasPrice": 20000000000
-    }
-
+``` shell
+$ dymka gas
+{
+    "gasPrice": 20000000000
+}
+```
 
 Other commands
 --------------
@@ -239,6 +238,9 @@ Other commands
 * `keccak` - calculate Keccak-256 of the given string argument,
 * `chain` - return an integer value for the currently configured “Chain Id”
   value introduced in [EIP-155] (delegates to `eth_chainId` RPC Method),
+* `selector` - returns contract's function by given selector,
+* `events`, `logs` - Returns emitted events of the given contract for the
+        specified block range (last 1000 blocks by default),
 * `help` - shows full list of commands and short command description.
 
 [EIP-155]: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-155.md
@@ -287,6 +289,7 @@ pipenv run ./dymka -V
 To publish the new version to pypi
 
 ``` shell
+python3 -m pip install --upgrade pip
 python3 -m pip install --user --upgrade setuptools wheel twine
 python3 setup.py sdist bdist_wheel
 python3 -m twine upload dist/*

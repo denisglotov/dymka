@@ -5,7 +5,7 @@ with open('readme.md', 'r') as fh:
 
     setuptools.setup(
         name='dymka',
-        version='1.1.1',
+        version='1.2.0',
         author='Denis Glotov',
         description='Swiss-knife cli for Ethereum-based blockchains',
         long_description=long_description,
@@ -21,8 +21,6 @@ with open('readme.md', 'r') as fh:
             'License :: OSI Approved :: MIT License',
             'Operating System :: OS Independent',
             'Programming Language :: Python :: 3',
-            'Programming Language :: Python :: 3.6',
-            'Programming Language :: Python :: 3.7',
         ],
         python_requires='>=3.6',
     )

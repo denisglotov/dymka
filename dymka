@@ -19,6 +19,8 @@ parser.add_argument('arguments', nargs='*',
 parser.add_argument('-a', '--address',
                     help='contract address to send/call, defaults to env '
                     'WEB3_CONTRACT_{CONTRACT_NAME}')
+parser.add_argument('-b', '--block',
+                    help='defaultBlock parameter: block number or "earliest|latest|pending"')
 parser.add_argument('-c', '--contract',
                     help='contract name or its json/abi path')
 parser.add_argument('-d', '--dry', action='store_true',
@@ -155,7 +157,7 @@ class Dymka:
     @command('gas', 'gasprice')
     def gas(self):
         """Returns current gas price."""
-        return {'gasPrice': self.w3.eth.gasPrice}
+        return {'gasPrice': self.w3.eth.gas_price}
 
     @command('private', 'priv')
     def private(self):
@@ -171,17 +173,17 @@ class Dymka:
     @command('checksum', 'cs')
     def checksum(self):
         """Calculate address string representation with correct web3 checksum."""
-        return self.processAccounts(Web3.toChecksumAddress, self.address_from, args.to)
+        return self.processAccounts(Web3.to_checksum_address, self.address_from, args.to)
 
     @command('balance', 'bal')
     def balance(self):
         """Returns balance of all provided arguments and --from account."""
-        return self.processAccounts(self.w3.eth.getBalance, self.address_from, args.to)
+        return self.processAccounts(lambda addr: self.w3.eth.get_balance(addr, *opts), self.address_from, args.to)
 
     @command('nonce')
     def nonce(self):
         """Returns nonce for all provided arguments and --from account."""
-        return self.processAccounts(self.w3.eth.getTransactionCount,
+        return self.processAccounts(self.w3.eth.get_transaction_count,
                                     self.address_from, args.to)
 
     @command('chain', 'chain_id', 'id')
@@ -208,15 +210,15 @@ class Dymka:
     def transaction(self):
         """Returns transaction with the given hash."""
         hash = args.arguments[0]
-        tx = self.w3.eth.getTransaction(hash)
+        tx = self.w3.eth.get_transaction(hash)
         return dict(tx)
 
     @command('block', 'bl')
     def block(self):
         """Returns current block number or specified block content."""
         if args.arguments:
-            return self.w3.eth.getBlock(getOptionalArguments(0)[0])
-        return self.w3.eth.blockNumber
+            return self.w3.eth.get_block(getOptionalArguments(0)[0])
+        return self.w3.eth.block_number
 
     @staticmethod
     def getContractAddressEnv(name):
@@ -284,6 +286,14 @@ class Dymka:
                                     bytecode=contract['bin'],
                                     **kwargs)
 
+    @command('selector', 'sel')
+    def functions(self):
+        """Returns contract's function by given selector"""
+        contract = self.getContract()
+        if args.arguments:
+            return str(contract.get_function_by_selector(args.arguments[0]))
+        return list(map(lambda fn: str(fn), contract.all_functions()))
+
     def processLogs(self, raw_logs):
         """Process given raw logs using contract ABI."""
         if not args.contract and not args.contractJson:
@@ -306,7 +316,7 @@ class Dymka:
         return logs
 
     def getTxReceipt(self, hash):
-        receipt = dict(self.w3.eth.getTransactionReceipt(hash))
+        receipt = dict(self.w3.eth.get_transaction_receipt(hash))
         receipt['logs'] = self.processLogs(receipt['logs'])
         return receipt
 
@@ -327,17 +337,17 @@ class Dymka:
                 toBlock = int(range[0])
                 fromBlock = int(range[0])
             elif len(range) == 2 and range[0]:
-                toBlock = int(range[1]) if range[1] else self.w3.eth.blockNumber
+                toBlock = int(range[1]) if range[1] else self.w3.eth.block_number
                 fromBlock = int(range[0])
             else:
-                toBlock = self.w3.eth.blockNumber
+                toBlock = self.w3.eth.block_number
                 fromBlock = toBlock - int(range[1])
         else:
-            toBlock = self.w3.eth.blockNumber
-            fromBlock = toBlock - 1000
+            toBlock = self.w3.eth.block_number
+            fromBlock = max(0, toBlock - 1000)
         log.info(f'Requesting logs in range from {fromBlock} to {toBlock}...')
         return self.processLogs(
-            self.w3.eth.getLogs({
+            self.w3.eth.get_logs({
                 'address': self.getContractAddress(),
                 'fromBlock': fromBlock,
                 'toBlock': toBlock}))
@@ -366,7 +376,7 @@ class Dymka:
         if self.address_from:
             opts['from'] = self.address_from
         if args.nonce or self.address_from:
-            opts['nonce'] = args.nonce or self.w3.eth.getTransactionCount(self.address_from)
+            opts['nonce'] = args.nonce or self.w3.eth.get_transaction_count(self.address_from)
         for name in ['chainId', 'gas', 'gasPrice', 'value', 'to']:
             if vars(args)[name]:
                 opts[name] = vars(args)[name]
@@ -376,7 +386,7 @@ class Dymka:
     def transact(self, tx):
         status = {}
         if args.estimate:
-            gas = self.w3.eth.estimateGas(tx)
+            gas = self.w3.eth.estimate_gas(tx)
             log.info('Gas estimated %s', gas)
             tx['gas'] = status['gas'] = gas
         if args.dry:
@@ -385,13 +395,13 @@ class Dymka:
         hash = ''
         if self.privKey:
             signed = self.w3.eth.account.sign_transaction(tx, private_key=self.privKey)
-            hash = self.w3.eth.sendRawTransaction(signed.rawTransaction)
+            hash = self.w3.eth.send_raw_transaction(signed.rawTransaction)
         else:
-            hash = self.w3.eth.sendTransaction(tx)
+            hash = self.w3.eth.send_transaction(tx)
         status['hash'] = hash.hex()
         log.info('Transaction hash: %s', hash.hex())
         try:
-            self.w3.eth.waitForTransactionReceipt(hash, timeout=args.timeout)
+            self.w3.eth.wait_for_transaction_receipt(hash, timeout=args.timeout)
         except Exception:
             raise ValueError(f'Timeout waiting {args.timeout}s for transaction {hash.hex()}')
         status['receipt'] = self.getTxReceipt(hash)
@@ -447,7 +457,7 @@ if __name__ == "__main__":
         print('Please specify a command or "help".')
         exit(0)
     elif args.version or args.command == 'version':
-        print(f'Version: 1.1.1, Web3.py: {str(Web3().api)}.')
+        print(f'Version: 1.2.0, Web3.py: {str(Web3().api)}.')
         exit(0)
     elif args.command == 'help':
         if args.arguments:
