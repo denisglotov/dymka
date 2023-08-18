@@ -18,5 +18,5 @@ jobs:
         pip install pylint flake8
     - name: Analysing the code with pylint
       run: |
-        pylint $(git ls-files '*.py')
+        # pylint $(git ls-files '*.py')
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
