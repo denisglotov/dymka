@@ -178,7 +178,7 @@ class Dymka:
     @command('balance', 'bal')
     def balance(self):
         """Returns balance of all provided arguments and --from account."""
-        return self.processAccounts(lambda addr: self.w3.eth.get_balance(addr, *opts), self.address_from, args.to)
+        return self.processAccounts(self.w3.eth.get_balance, self.address_from, args.to)
 
     @command('nonce')
     def nonce(self):
