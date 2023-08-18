@@ -1,0 +1,36 @@
+name: Tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Pre
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq
+
+    - name: Ganache
+      run: |
+        docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest --account="0x${WEB3_FROM},1000000000000000000"
+        sleep 1
+
+    - name: Set up Python 3
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.11"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .
+
+    - name: Run tests
+      env:
+        WEB3_FROM: 68d20faeaf9ac405bd32a98ba0835bbd14bbc4ffdedb60ea3a67329819b4d7a8 # test only key
+      run: |
+        tests/test.sh
