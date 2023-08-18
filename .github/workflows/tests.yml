@@ -34,6 +34,6 @@ jobs:
         WEB3_FROM: 68d20faeaf9ac405bd32a98ba0835bbd14bbc4ffdedb60ea3a67329819b4d7a8 # test only key
       run: |
         docker ps -a
-        docker ps -q
-        docker logs $(docker ps -q | head -1)
+        docker ps -aq
+        docker logs $(docker ps -aq | head -1)
         tests/test.sh
