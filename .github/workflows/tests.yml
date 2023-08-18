@@ -17,7 +17,7 @@ jobs:
     - name: Ganache
       run: |
         docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest --account="0x${WEB3_FROM},1000000000000000000"
-        sleep 1
+        sleep 5
 
     - name: Set up Python 3
       uses: actions/setup-python@v3
