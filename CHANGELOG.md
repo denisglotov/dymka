@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add ERC20 ABI.
 - Add EIP1559 support.
 - Test with Github actions instead of deprecated Travis.
+- Lint with pylint
 
 
 ## [1.2.0] - 2023-08-17

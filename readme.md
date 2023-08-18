@@ -271,32 +271,6 @@ or send a pull request so I try to help and review.
 [issue]: https://github.com/denisglotov/dymka/issues/new
 
 
-Developer hints
----------------
-
-To set up virtual environment
-
-``` shell
-PIPENV_VENV_IN_PROJECT=1 pipenv install --dev
-```
-
-To run it from there
-
-``` shell
-pipenv run ./dymka -V
-```
-
-To publish the new version to pypi
-
-``` shell
-python3 -m pip install --upgrade pip
-python3 -m pip install --user --upgrade setuptools wheel twine
-python3 setup.py sdist bdist_wheel
-python3 -m twine upload dist/*
-```
-Taken from https://packaging.python.org/tutorials/packaging-projects/.
-
-
 Why should I trust dymka
 ------------------------
 
