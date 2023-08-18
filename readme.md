@@ -2,6 +2,7 @@ Dymka
 =====
 
 [![Build status]](https://travis-ci.org/denisglotov/dymka)
+![Lint status](https://github.com/denisglotov/dymka/actions/workflows/pylint.yml/badge.svg)
 [![Pypi version]](https://pypi.org/project/dymka/)
 
 [Build status]: https://travis-ci.org/denisglotov/dymka.svg?branch=master
