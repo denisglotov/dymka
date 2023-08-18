@@ -33,4 +33,5 @@ jobs:
       env:
         WEB3_FROM: 68d20faeaf9ac405bd32a98ba0835bbd14bbc4ffdedb60ea3a67329819b4d7a8 # test only key
       run: |
+        docker ps -a
         tests/test.sh
