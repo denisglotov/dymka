@@ -1,4 +1,4 @@
-#!/bin/bash -euxo pipefail
+#!/bin/bash -eux
 cd $(dirname $0)
 
 die() {
