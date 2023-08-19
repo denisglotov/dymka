@@ -48,12 +48,11 @@ RES=$(dymka -j demo.abi.json -c demo call value | jq -r ".result")
 
 set +x
 LOGS=$(dymka -j demo.abi.json -c demo events 1-)
-cat $LOGS
-[ $(echo "$LOGS" | jq -r .[0].event) == "Acted" ] || die "Wrong 1st log name"
-[ $(echo "$LOGS" | jq -r .[0].args.who) == $FROM ] || die "Wrong 1st log arg"
-[ $(echo "$LOGS" | jq -r .[1].event) == "Updated" ] || die "Wrong 2nd log name"
-[ $(echo "$LOGS" | jq -r .[1].args.value) == "43" ] || die "Wrong 2nd log arg"
-[ $(echo "$LOGS" | jq -r .[2].event) == "Updated" ] || die "Wrong 3rd log name"
+[ $(echo "$LOGS" | jq -r .[0].event) == "Acted" ] || die "Wrong 1st log name $LOGS"
+[ $(echo "$LOGS" | jq -r .[0].args.who) == $FROM ] || die "Wrong 1st log arg $LOGS"
+[ $(echo "$LOGS" | jq -r .[1].event) == "Updated" ] || die "Wrong 2nd log name $LOGS"
+[ $(echo "$LOGS" | jq -r .[1].args.value) == "43" ] || die "Wrong 2nd log arg $LOGS"
+[ $(echo "$LOGS" | jq -r .[2].event) == "Updated" ] || die "Wrong 3rd log name $LOGS"
 set -x
 
 echo
