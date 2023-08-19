@@ -306,7 +306,7 @@ class Dymka:
             processed = False
             for evt in contract.events:
                 try:
-                    logs.append(contract.events[evt.event_name]().processLog(event))
+                    logs.append(contract.events[evt.event_name]().process_log(event))
                     processed = True
                     break
                 except exceptions.MismatchedABI:
