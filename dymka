@@ -178,7 +178,7 @@ class Dymka:
     @command('balance', 'bal')
     def balance(self):
         """Returns balance of all provided arguments and --from account."""
-        return self.processAccounts(lambda addr: self.w3.eth.get_balance(addr, *opts), self.address_from, args.to)
+        return self.processAccounts(self.w3.eth.get_balance, self.address_from, args.to)
 
     @command('nonce')
     def nonce(self):
@@ -306,7 +306,7 @@ class Dymka:
             processed = False
             for evt in contract.events:
                 try:
-                    logs.append(contract.events[evt.event_name]().processLog(event))
+                    logs.append(contract.events[evt.event_name]().process_log(event))
                     processed = True
                     break
                 except exceptions.MismatchedABI:
@@ -417,7 +417,7 @@ class Dymka:
         """
         contract = self.getContract()
         ctor = contract.constructor(*getOptionalArguments(0))
-        tx = ctor.buildTransaction(self.getOpts())
+        tx = ctor.build_transaction(self.getOpts())
         status = self.transact(tx)
         if 'receipt' in status:
             address = status['receipt']['contractAddress']
@@ -430,7 +430,7 @@ class Dymka:
         contract = self.getContract(address=self.getContractAddress())
         func = contract.functions[function_name]
         func_bound = func(*getOptionalArguments(1))
-        return func_bound.buildTransaction(opts)
+        return func_bound.build_transaction(opts)
 
     @command('send')
     def send(self):
@@ -457,7 +457,7 @@ if __name__ == "__main__":
         print('Please specify a command or "help".')
         exit(0)
     elif args.version or args.command == 'version':
-        print(f'Version: 1.2.0, Web3.py: {str(Web3().api)}.')
+        print(f'Version: 1.2.1, Web3.py: {str(Web3().api)}.')
         exit(0)
     elif args.command == 'help':
         if args.arguments:

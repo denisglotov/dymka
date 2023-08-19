@@ -1,10 +1,10 @@
 Dymka
 =====
 
-[![Build status]](https://travis-ci.org/denisglotov/dymka)
+![Build status](https://github.com/denisglotov/dymka/actions/workflows/tests.yml/badge.svg)
+![Lint status](https://github.com/denisglotov/dymka/actions/workflows/pylint.yml/badge.svg)
 [![Pypi version]](https://pypi.org/project/dymka/)
 
-[Build status]: https://travis-ci.org/denisglotov/dymka.svg?branch=master
 [Pypi version]: https://img.shields.io/pypi/v/dymka.svg
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
@@ -269,32 +269,6 @@ Use `-v` and `-vv` flags to see more information. File an [issue]
 or send a pull request so I try to help and review.
 
 [issue]: https://github.com/denisglotov/dymka/issues/new
-
-
-Developer hints
----------------
-
-To set up virtual environment
-
-``` shell
-PIPENV_VENV_IN_PROJECT=1 pipenv install --dev
-```
-
-To run it from there
-
-``` shell
-pipenv run ./dymka -V
-```
-
-To publish the new version to pypi
-
-``` shell
-python3 -m pip install --upgrade pip
-python3 -m pip install --user --upgrade setuptools wheel twine
-python3 setup.py sdist bdist_wheel
-python3 -m twine upload dist/*
-```
-Taken from https://packaging.python.org/tutorials/packaging-projects/.
 
 
 Why should I trust dymka
