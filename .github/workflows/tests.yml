@@ -14,11 +14,12 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y jq
 
-    - name: Foundry anvil
+    - name: Foundry Anvil
       run: |
         curl -L https://foundry.paradigm.xyz | bash
-        source /home/runner/.bashrc
-        foundryup
+        more ~/.bashrc
+        source ~/.bashrc
+        ./foundryup
         nohup anvil --auto-impersonate &
         more nohup.out
 
