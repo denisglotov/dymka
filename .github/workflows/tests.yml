@@ -16,8 +16,8 @@ jobs:
 
     - name: Ganache
       run: |
-        docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest --account="0x${WEB3_FROM},1000000000000000000"
-        sleep 5
+        docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest --account="0x${{ secrets.TEST_PRIV }},1000000000000000000"
+        sleep 1
 
     - name: Set up Python 3
       uses: actions/setup-python@v3
@@ -31,7 +31,7 @@ jobs:
 
     - name: Run tests
       env:
-        WEB3_FROM: 68d20faeaf9ac405bd32a98ba0835bbd14bbc4ffdedb60ea3a67329819b4d7a8 # test only key
+        WEB3_FROM: ${{ secrets.TEST_PRIV }}
       run: |
         docker ps -a
         docker ps -aq
