@@ -10,8 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add ERC20 ABI.
 - Add EIP1559 support.
-- Test with Github actions instead of deprecated Travis.
 - Lint with pylint
+
+## [1.2.1] - 2023-08-19
+
+- Test with Github actions instead of deprecated Travis.
+- Testing uses Foundry Anvil insttead of Truffle Ganache.
+- Minor fixes found by working tests.
 
 
 ## [1.2.0] - 2023-08-17
