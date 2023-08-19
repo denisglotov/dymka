@@ -17,6 +17,8 @@ jobs:
     - name: Foundry anvil
       run: |
         curl -L https://foundry.paradigm.xyz | bash
+        source /home/runner/.bashrc
+        foundryup
         nohup anvil --auto-impersonate &
         more nohup.out
 
