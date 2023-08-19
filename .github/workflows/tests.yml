@@ -14,10 +14,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y jq
 
-    - name: Ganache
+    - name: Foundry anvil
       run: |
-        docker run -d -p 8545:8545 trufflesuite/ganache-cli:latest --account="0x${{ secrets.TEST_PRIV }},1000000000000000000"
-        sleep 1
+        curl -L https://foundry.paradigm.xyz | bash
+        nohup anvil --auto-impersonate &
+        more nohup.out
 
     - name: Set up Python 3
       uses: actions/setup-python@v3
