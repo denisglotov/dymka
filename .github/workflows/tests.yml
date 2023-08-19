@@ -17,10 +17,9 @@ jobs:
     - name: Foundry Anvil
       run: |
         curl -L https://foundry.paradigm.xyz | bash
-        more ~/.bashrc
         source ~/.bashrc
         ./foundryup
-        nohup anvil --auto-impersonate &
+        nohup ./anvil --auto-impersonate &
         more nohup.out
 
     - name: Set up Python 3
