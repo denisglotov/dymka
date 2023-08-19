@@ -417,7 +417,7 @@ class Dymka:
         """
         contract = self.getContract()
         ctor = contract.constructor(*getOptionalArguments(0))
-        tx = ctor.buildTransaction(self.getOpts())
+        tx = ctor.build_transaction(self.getOpts())
         status = self.transact(tx)
         if 'receipt' in status:
             address = status['receipt']['contractAddress']
@@ -430,7 +430,7 @@ class Dymka:
         contract = self.getContract(address=self.getContractAddress())
         func = contract.functions[function_name]
         func_bound = func(*getOptionalArguments(1))
-        return func_bound.buildTransaction(opts)
+        return func_bound.build_transaction(opts)
 
     @command('send')
     def send(self):
