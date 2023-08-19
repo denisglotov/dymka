@@ -9,15 +9,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Foundry Anvil
-      run: |
-        curl -L https://foundry.paradigm.xyz | bash
-        source ~/.bashrc
-        export
-        ls ~/.config/.foundry/bin
-        ~/.config/.foundry/bin/foundryup
-        nohup anvil --auto-impersonate &
-        more nohup.out
+    - name: Install Foundry
+      uses: foundry-rs/foundry-toolchain@v1
 
     - name: Set up Python 3
       uses: actions/setup-python@v3
