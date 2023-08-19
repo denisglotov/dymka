@@ -1,11 +1,10 @@
 Dymka
 =====
 
-[![Build status]](https://travis-ci.org/denisglotov/dymka)
+![Build status](https://github.com/denisglotov/dymka/actions/workflows/tests.yml/badge.svg)
 ![Lint status](https://github.com/denisglotov/dymka/actions/workflows/pylint.yml/badge.svg)
 [![Pypi version]](https://pypi.org/project/dymka/)
 
-[Build status]: https://travis-ci.org/denisglotov/dymka.svg?branch=master
 [Pypi version]: https://img.shields.io/pypi/v/dymka.svg
 
 Swiss-knife command line tool for interacting with Ethereum-based blockchains.
