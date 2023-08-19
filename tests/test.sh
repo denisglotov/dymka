@@ -7,9 +7,11 @@ die() {
 }
 
 dymka version
+dymka id
 dymka block
-dymka accounts
-dymka balance
+
+FROM=$(dymka accounts | jq -r ".[0]")
+dymka balance $FROM
 
 echo
 echo "Deploy Demo contract."
@@ -46,8 +48,9 @@ RES=$(dymka -j demo.abi.json -c demo call value | jq -r ".result")
 
 set +x
 LOGS=$(dymka -j demo.abi.json -c demo events 1-)
+cat $LOGS
 [ $(echo "$LOGS" | jq -r .[0].event) == "Acted" ] || die "Wrong 1st log name"
-[ $(echo "$LOGS" | jq -r .[0].args.who) == "0xB18aE0D7F12105e36a430523721622e5930879cC" ] || die "Wrong 1st log arg"
+[ $(echo "$LOGS" | jq -r .[0].args.who) == $FROM ] || die "Wrong 1st log arg"
 [ $(echo "$LOGS" | jq -r .[1].event) == "Updated" ] || die "Wrong 2nd log name"
 [ $(echo "$LOGS" | jq -r .[1].args.value) == "43" ] || die "Wrong 2nd log arg"
 [ $(echo "$LOGS" | jq -r .[2].event) == "Updated" ] || die "Wrong 3rd log name"
