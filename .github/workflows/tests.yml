@@ -9,18 +9,13 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Pre
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y jq
-
     - name: Foundry Anvil
       run: |
         curl -L https://foundry.paradigm.xyz | bash
         source ~/.bashrc
         more ~/.bashrc
-        ls ~/.foundry/bin
-        ~/.foundry/bin/foundryup
+        ls ~/.config/.foundry/bin
+        ~/.config/.foundry/bin/foundryup
         nohup anvil --auto-impersonate &
         more nohup.out
 
