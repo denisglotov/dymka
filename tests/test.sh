@@ -11,9 +11,6 @@ dymka block
 dymka accounts
 dymka balance
 
-# From account must be set by travis beforehand.
-[ -v WEB3_FROM ] || die "WEB3_FROM must be set for this script to run"
-
 echo
 echo "Deploy Demo contract."
 ADDR=$(dymka -c demo deploy | tee `tty` | jq -r ".receipt.contractAddress")
